@@ -18,7 +18,7 @@ class RandomAgent:
         )
 
     def act(self, observation):
-        """ Since this is a random agent the observation is not used."""
+        """Since this is a random agent the observation is not used."""
         return self.policy.sample().item()
 
 
@@ -36,7 +36,7 @@ def _save_stats(episodic_returns, crt_step, path):
 
 
 def eval(agent, env, crt_step, opt):
-    """ Use the greedy, deterministic policy, not the epsilon-greedy policy you
+    """Use the greedy, deterministic policy, not the epsilon-greedy policy you
     might use during training.
     """
     episodic_returns = []
@@ -70,7 +70,7 @@ def _info(opt):
 
 def main(opt):
     _info(opt)
-    #opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     opt.device = torch.device("cpu")
     env = Env("train", opt)
     eval_env = Env("eval", opt)
@@ -94,11 +94,11 @@ def main(opt):
 
 
 def get_options():
-    """ Configures a parser. Extend this with all the best performing hyperparameters of
-        your agent as defaults.
+    """Configures a parser. Extend this with all the best performing hyperparameters of
+    your agent as defaults.
 
-        For devel purposes feel free to change the number of training steps and
-        the evaluation interval.
+    For devel purposes feel free to change the number of training steps and
+    the evaluation interval.
     """
     parser = argparse.ArgumentParser()
     parser.add_argument("--logdir", default="logdir/random_agent/0")
