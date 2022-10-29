@@ -6,7 +6,7 @@ import torch.nn as nn
 
 from .crafter_wrapper import Env
 from torch import Tensor
-from typing import Union, Tuple
+from typing import Union, Tuple, List
 
 
 class ReplayBuffer(object):
@@ -122,3 +122,47 @@ def ddqn_target(
     next_Q_values[done_batch == 1] = 0
 
     return r_batch + (gamma * next_Q_values)
+
+
+class ConvBlock(nn.Module):
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: Tuple[int, int],
+        stride: int = 1,
+        padding: int = 0,
+        dilation: int = 1,
+        groups: int = 1,
+        bias: bool = True,
+        after: List[str] = None,
+    ):
+        super().__init__()
+
+        def str_to_block(name: str):
+            if name == "bn":
+                return nn.BatchNorm2d(out_channels)
+            if name == "relu":
+                return nn.ReLU()
+
+            raise NotImplementedError(name)
+
+        if after is None:
+            after = []
+
+        self.block = nn.Sequential(
+            nn.Conv2d(
+                in_channels,
+                out_channels,
+                kernel_size,
+                stride,
+                padding,
+                dilation,
+                groups,
+                bias,
+            ),
+            *[str_to_block(name) for name in after],
+        )
+
+    def forward(self, x: Tensor):
+        return self.block(x)

@@ -10,24 +10,32 @@ from src.utils import *
 from torch import Tensor
 
 
-class DQN_RAM(nn.Module):
-    def __init__(self, in_features: int, num_actions: int):
-        super(DQN_RAM, self).__init__()
+class DQN_Conv(nn.Module):
+    def __init__(
+        self, in_features: int, num_actions: int, image_size: Tuple[int, int] = (64, 64)
+    ):
+        super().__init__()
         self.in_features = in_features
         self.num_actions = num_actions
-        self.hidden_size = 128
 
-        self.fc1 = nn.Linear(in_features, self.hidden_size)
-        self.act1 = nn.ReLU()
-        self.fc2 = nn.Linear(self.hidden_size, self.hidden_size)
-        self.act2 = nn.ReLU()
-        self.fc3 = nn.Linear(self.hidden_size, num_actions)
+        blocks = [
+            ConvBlock(in_features, 16, (3, 3), padding=1, after=["relu"]),
+            nn.MaxPool2d(3, stride=2, padding=1),
+            ConvBlock(16, 16, (3, 3), padding=1, after=["relu"]),
+            nn.MaxPool2d(3, stride=2, padding=1),
+        ]
+
+        self.blocks = nn.Sequential(*blocks)
+        self.classifier = nn.Sequential(
+            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 128),
+            nn.ReLU(),
+            nn.Linear(128, num_actions),
+        )
 
     def forward(self, x):
+        x = self.blocks(x)
         x = x.reshape(x.shape[0], -1)
-        x = self.act1(self.fc1(x))
-        x = self.act2(self.fc2(x))
-        return self.fc3(x)
+        return self.classifier(x)
 
 
 class DQNAgent:
@@ -60,8 +68,8 @@ def dqn_agent(opt, target_function):
     input_arg = env.window * input_shape[0] * input_shape[1]
     num_actions = env.action_space.n
 
-    Q = DQN_RAM(input_arg, num_actions).to(device)
-    target_Q = DQN_RAM(input_arg, num_actions).to(device)
+    Q = DQN_Conv(env.window, num_actions, input_shape)
+    target_Q = DQN_Conv(env.window, num_actions, input_shape)
 
     Q.apply(init_weights)
     target_Q.apply(init_weights)
@@ -140,7 +148,9 @@ def dqn_agent(opt, target_function):
                     os.path.join(opt.logdir, f"model_{step_cnt}.pth"),
                 )
 
-        pbar.set_description(f"[Episode {ep_cnt}]: Current reward {episode_reward:.04f}")
+        pbar.set_description(
+            f"[Episode {ep_cnt}]: Current reward {episode_reward:.04f}"
+        )
         pbar.update(1)
         step_cnt += 1
 
