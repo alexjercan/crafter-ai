@@ -75,7 +75,7 @@ def q_learning(opt):
 
     best_avg_return = 0
 
-    agent = DQNAgent(Q)
+    agent = DQNAgent(Q, device)
 
     # main loop
     ep_cnt, step_cnt, done = 0, 0, True
