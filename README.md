@@ -43,3 +43,24 @@ python analysis/plot_eval_performance.py --logdir logdir/random_agent
 ```
 
 For other performance metrics see the [plotting scripts](https://github.com/danijar/crafter/tree/main/analysis) in the original Crafter repo.
+
+## TODO
+
+[ ] More visualization
+- [x] Episodic Reward for eval
+- [ ] Loss plot for training
+- [ ] Episodic reward for training
+- [ ] Success rate for each achievement
+- [ ] Distribution of actions taken with respect to time (step)
+
+[ ] More algorithms
+- [x] DQN
+- [x] DDQN
+- [ ] Dueling DQN
+- [ ] Maybe try to penalize noop
+- [ ] Explore intrinsic reward for exploring new states
+
+[ ] More test runs to generate better plots
+- [ ] 3 Runs with DQN
+- [ ] 3 Runs with DDQN
+
