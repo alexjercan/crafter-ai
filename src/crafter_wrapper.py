@@ -26,6 +26,14 @@ class Env:
                 save_video=False,
                 save_episode=False,
             )
+        if mode == "eval":
+            env = crafter.Recorder(
+                env,
+                pathlib.Path(args.logdir) / "video",
+                save_stats=False,
+                save_video=True,
+                save_episode=False,
+            )
         self._obs_dim = 64
         self.env = env
         self.window = args.history_length  # Number of frames to concatenate
