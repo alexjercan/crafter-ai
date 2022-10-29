@@ -10,11 +10,21 @@ This folder contains the following code:
 
 Follow the installation instructions in the [Crafter repository](https://github.com/danijar/crafter). It's ideal to use some kind of virtual env, my personal favourite is `miniconda`, although installation should work with the system's python as well.
 
+Example using venv
+
+```console
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
 For running the Random Agent execute:
 
 ```bash
 python train.py --steps 10_000 --eval-interval 2500 --logdir logdir/random_agent/0
 ```
+
+You can specify other types of agents using `--agent`. Implemented `random`, `dqn`, `ddqn`.
 
 This will run the Random Agent for 10_000 steps and evaluate it every 2500 steps for 20 episodes. The results with be written in `logdir/random_agent/0`, where `0` indicates the run.
 

@@ -31,7 +31,7 @@ class Env:
                 env,
                 pathlib.Path(args.logdir) / "video",
                 save_stats=False,
-                save_video=True,
+                save_video=args.video,
                 save_episode=False,
             )
         self._obs_dim = 64

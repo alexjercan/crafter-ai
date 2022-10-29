@@ -41,7 +41,7 @@ class DQNAgent:
         return self.Q(s).argmax(dim=1).item()
 
 
-def q_learning(opt):
+def dqn_agent(opt, target_function):
     _info(opt)
     opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -70,8 +70,6 @@ def q_learning(opt):
     criterion = nn.HuberLoss()
     replay_buffer = ReplayBuffer(replay_buffer_size)
     eps_scheduler = iter(linear_eps_generator())
-
-    target_function = ddqn_target
 
     best_avg_return = 0
 
@@ -162,6 +160,31 @@ class RandomAgent:
         return self.policy.sample().item()
 
 
+def random_agent(opt):
+    _info(opt)
+    opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    env = Env("train", opt)
+    eval_env = Env("eval", opt)
+    agent = RandomAgent(env.action_space.n)
+
+    # main loop
+    ep_cnt, step_cnt, done = 0, 0, True
+    while step_cnt < opt.steps or not done:
+        if done:
+            ep_cnt += 1
+            obs, done = env.reset(), False
+
+        action = agent.act(obs)
+        obs, reward, done, info = env.step(action)
+
+        step_cnt += 1
+
+        # evaluate once in a while
+        if step_cnt % opt.eval_interval == 0:
+            eval(agent, eval_env, step_cnt, opt)
+
+
 def _save_stats(episodic_returns, crt_step, path):
     # save the evaluation stats
     episodic_returns = torch.tensor(episodic_returns)
@@ -211,28 +234,14 @@ def _info(opt):
 
 
 def main(opt):
-    _info(opt)
-    opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    if opt.agent == "random":
+        return random_agent(opt)
+    if opt.agent == "dqn":
+        return dqn_agent(opt, target_function=dqn_target)
+    if opt.agent == "ddqn":
+        return dqn_agent(opt, target_function=ddqn_target)
 
-    env = Env("train", opt)
-    eval_env = Env("eval", opt)
-    agent = RandomAgent(env.action_space.n)
-
-    # main loop
-    ep_cnt, step_cnt, done = 0, 0, True
-    while step_cnt < opt.steps or not done:
-        if done:
-            ep_cnt += 1
-            obs, done = env.reset(), False
-
-        action = agent.act(obs)
-        obs, reward, done, info = env.step(action)
-
-        step_cnt += 1
-
-        # evaluate once in a while
-        if step_cnt % opt.eval_interval == 0:
-            eval(agent, eval_env, step_cnt, opt)
+    raise NotImplementedError(f"Agent {opt.agent} not implemented yet.")
 
 
 def get_options():
@@ -309,8 +318,21 @@ def get_options():
         default=100,
         help="Number of steps to switch the target Q network and the Q network",
     )
+    parser.add_argument(
+        "--agent",
+        type=str,
+        default="random",
+        help="The name of the agent that you want to run (random, dqn, ddqn)",
+    )
+    parser.add_argument(
+        "--video",
+        action="store_true",
+        help="Save video of eval process",
+    )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
-    q_learning(get_options())
+    opt = get_options()
+
+    main(get_options())
