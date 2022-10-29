@@ -43,6 +43,7 @@ class DQNAgent:
 
 def q_learning(opt):
     _info(opt)
+    opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     batch_size = opt.batch_size
     gamma = opt.gamma
@@ -307,9 +308,6 @@ def get_options():
         type=int,
         default=100,
         help="Number of steps to switch the target Q network and the Q network",
-    )
-    parser.add_argument(
-        "--device", type=str, default="cpu", help="The device that will be used"
     )
     return parser.parse_args()
 
