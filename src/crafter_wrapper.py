@@ -56,11 +56,11 @@ class Env:
         obs = obs.mean(-1)
         obs = torch.tensor(obs, dtype=torch.float32, device=self.device).div_(255)
         self.state_buffer.append(obs)
-        return torch.stack(list(self.state_buffer), 0)
+        return torch.stack(list(self.state_buffer), 0).unsqueeze(0)
 
     def step(self, action):
         obs, reward, done, info = self.env.step(action)
         obs = obs.mean(-1)
         obs = torch.tensor(obs, dtype=torch.float32, device=self.device).div_(255)
         self.state_buffer.append(obs)
-        return torch.stack(list(self.state_buffer), 0), reward, done, info
+        return torch.stack(list(self.state_buffer), 0).unsqueeze(0), reward, done, info
