@@ -37,7 +37,7 @@ class DQNAgent:
 
     @torch.no_grad()
     def act(self, s: Tensor):
-        s = s.view(1, -1).to(self.device)
+        s = s[None].to(self.device)
         return self.Q(s).argmax(dim=1).item()
 
 

@@ -69,7 +69,7 @@ def select_epsilon_greedy_action(env: Env, Q: nn.Module, s: Tensor, eps: float):
         return env.action_space.sample()
 
     with torch.no_grad():
-        s = s.view(1, -1).to(env.device)
+        s = s[None].to(env.device)
         output = Q(s).argmax(dim=1).item()
 
     return output
