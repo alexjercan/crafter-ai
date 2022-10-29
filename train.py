@@ -1,11 +1,9 @@
-import os
 import torch
 import argparse
 import itertools
 import pickle
 import random
 
-import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
@@ -27,6 +25,7 @@ class Options:
     eval_episodes: int
     eval_interval: int
     video: bool
+    device: str
 
 
 class ConvBlock(nn.Module):
@@ -104,10 +103,10 @@ class ConvModel(nn.Module):
 class ReplayMemory:
     """Cyclic buffer that stores the transitions of the game on CPU RAM."""
 
-    def __init__(self, size=1000, batch_size=32, device="cpu"):
-        self._buffer = deque(maxlen=size)
+    def __init__(self, opt: Options, size: int = 1000, batch_size: int = 32):
+        self._buffer: deque = deque(maxlen=size)
         self._batch_size = batch_size
-        self._device = device
+        self._device = opt.device
 
     def push(self, transition: Tuple[Tensor, int, float, Tensor, bool]) -> None:
         """Store the transition in the buffer
@@ -179,16 +178,21 @@ class Agent:
     def __init__(self) -> None:
         pass
 
-    @torch.no_grad()
+    def act(self, state: Tensor) -> int:
+        raise NotImplementedError()
+
     def step(self, state: Tensor) -> int:
         raise NotImplementedError()
 
     def learn(
-        self, state: Tensor, action: int, reward: float, state_: Tensor, done: bool
+        self,
+        state: Tensor,
+        action: int,
+        reward: float,
+        state_: Tensor,
+        done: bool,
+        opt: Options,
     ) -> None:
-        pass
-
-    def eval(self, env: Env, crt_step: int, opt: Options) -> None:
         pass
 
 
@@ -203,26 +207,22 @@ class RandomAgent(Agent):
             torch.ones(action_num) / action_num
         )
 
-    @torch.no_grad()
-    def step(self, state: Tensor) -> int:
+    def act(self, state: Tensor) -> int:
         return self.policy.sample().item()
 
+    def step(self, state: Tensor) -> int:
+        return self.act(state)
+
     def learn(
-        self, state: Tensor, action: int, reward: float, state_: Tensor, done: bool
+        self,
+        state: Tensor,
+        action: int,
+        reward: float,
+        state_: Tensor,
+        done: bool,
+        opt: Options,
     ) -> None:
         pass
-
-    def eval(self, env: Env, crt_step: int, opt: Options) -> None:
-        episodic_returns = []
-        for _ in range(opt.eval_episodes):
-            state, done = env.reset(), False
-            episodic_returns.append(0)
-            while not done:
-                action = self.policy.sample().item()
-                state, reward, done, info = env.step(action)
-                episodic_returns[-1] += reward
-
-        _save_stats(episodic_returns, crt_step, opt.logdir)
 
 
 class DQNAgent(Agent):
@@ -257,6 +257,9 @@ class DQNAgent(Agent):
         ), "You should have at least a batch in the ER."
 
     @torch.no_grad()
+    def act(self, state: Tensor) -> int:
+        return self._estimator(state).argmax(dim=1).item()
+
     def step(self, state: Tensor) -> int:
         """Get an action based on the input state
 
@@ -265,16 +268,21 @@ class DQNAgent(Agent):
         Otherwise, return an action using a greedy policy.
         """
         if self._step_cnt < self._warmup_steps:
-            return torch.randint(self._action_num, (1,)).item()
+            return int(torch.randint(self._action_num, (1,)).item())
 
         if next(self._epsilon) < torch.rand(1).item():
-            qvals = self._estimator(state)
-            return qvals.argmax()
+            return self.act(state)
 
-        return torch.randint(self._action_num, (1,)).item()
+        return int(torch.randint(self._action_num, (1,)).item())
 
     def learn(
-        self, state: Tensor, action: int, reward: float, state_: Tensor, done: bool
+        self,
+        state: Tensor,
+        action: int,
+        reward: float,
+        state_: Tensor,
+        done: bool,
+        opt: Options,
     ) -> None:
         # add transition to the experience replay
         self._buffer.push((state.cpu(), action, reward, state_.cpu(), done))
@@ -293,19 +301,6 @@ class DQNAgent(Agent):
             self._target_estimator.load_state_dict(self._estimator.state_dict())
 
         self._step_cnt += 1
-
-    def eval(self, env: Env, crt_step: int, opt: Options) -> None:
-        episodic_returns = []
-        for _ in range(opt.eval_episodes):
-            state, done = env.reset(), False
-            episodic_returns.append(0)
-
-            while not done:
-                action = self._estimator(state).argmax(dim=1).item()
-                state, reward, done, info = env.step(action)
-                episodic_returns[-1] += reward
-
-        _save_stats(episodic_returns, crt_step, opt.logdir)
 
     def _update(
         self,
@@ -346,13 +341,61 @@ class DQNAgent(Agent):
         self._optimizer.step()
 
 
-def _save_stats(episodic_returns: List[float], crt_step: int, path: str) -> None:
+class DDQNAgent(DQNAgent):
+    def _update(
+        self,
+        states: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        states_: Tensor,
+        done: Tensor,
+    ) -> None:
+        # compute the DeepQNetwork update. Carefull not to include the
+        # target network in the computational graph.
+
+        # Compute Q(s, * | θ) and Q(s', . | θ^)
+        with torch.no_grad():
+            actions_ = self._estimator(states_).argmax(1, keepdim=True)
+            q_values_ = self._target_estimator(states_)
+        q_values = self._estimator(states)
+
+        # compute Q(s, a)
+        qsa = q_values.gather(1, actions)
+        qsa_ = q_values_.gather(1, actions_)
+
+        # compute target Q(s', a')
+        target_qsa = rewards + self._gamma * qsa_ * (1 - done.float())
+
+        # compute the loss and average it over the entire batch
+        loss = self._criterion(qsa, target_qsa)
+
+        # backprop and optimize
+        self._optimizer.zero_grad()
+        loss.backward()
+        self._optimizer.step()
+
+
+def eval(agent: Agent, env: Env, crt_step: int, opt: Options) -> None:
+    episodic_returns = []
+    for _ in range(opt.eval_episodes):
+        state, done = env.reset(), False
+        episodic_returns.append(0.0)
+
+        while not done:
+            action = agent.act(state)
+            state, reward, done, info = env.step(action)
+            episodic_returns[-1] += reward
+
+    _save_eval_stats(episodic_returns, crt_step, opt.logdir)
+
+
+def _save_eval_stats(episodic_returns: List[float], crt_step: int, path: str) -> None:
     # save the evaluation stats
-    episodic_returns = torch.tensor(episodic_returns)
-    avg_return = episodic_returns.mean().item()
+    episodic_returns_ = torch.tensor(episodic_returns)
+    avg_return = episodic_returns_.mean().item()
     tqdm.write(
         "[{:06d}] eval results: R/ep={:03.2f}, std={:03.2f}.".format(
-            crt_step, avg_return, episodic_returns.std().item()
+            crt_step, avg_return, episodic_returns_.std().item()
         )
     )
     with open(path + "/eval_stats.pkl", "ab") as f:
@@ -378,7 +421,6 @@ def _info(opt: Options) -> None:
 
 def main(opt: Options) -> None:
     _info(opt)
-    opt.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     env = Env("train", opt)
     eval_env = Env("eval", opt)
@@ -389,7 +431,7 @@ def main(opt: Options) -> None:
 
     agent = DQNAgent(
         net,
-        ReplayMemory(size=1_000, batch_size=32, device=opt.device),
+        ReplayMemory(size=1_000, batch_size=32, opt=opt),
         nn.HuberLoss(),
         optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
         get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
@@ -409,11 +451,11 @@ def main(opt: Options) -> None:
 
         a = agent.step(s)
         s_next, r, done, info = env.step(a)
-        agent.learn(s, a, r, s_next, done)
+        agent.learn(s, a, r, s_next, done, opt)
 
         # evaluate once in a while
         if step_cnt % opt.eval_interval == 0:
-            agent.eval(eval_env, step_cnt, opt)
+            eval(agent, eval_env, step_cnt, opt)
 
         episode_reward += r
         s = s_next.clone()
@@ -472,7 +514,16 @@ def get_options() -> Options:
         action="store_true",
         help="Save video of eval process",
     )
-    return parser.parse_args()
+    args = parser.parse_args()
+    return Options(
+        logdir=args.logdir,
+        steps=args.steps,
+        history_length=args.history_length,
+        eval_episodes=args.eval_episodes,
+        eval_interval=args.eval_interval,
+        video=args.video,
+        device="cuda" if torch.cuda.is_available() else "cpu",
+    )
 
 
 if __name__ == "__main__":
