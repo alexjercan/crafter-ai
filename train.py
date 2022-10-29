@@ -68,8 +68,8 @@ def dqn_agent(opt, target_function):
     input_arg = env.window * input_shape[0] * input_shape[1]
     num_actions = env.action_space.n
 
-    Q = DQN_Conv(env.window, num_actions, input_shape)
-    target_Q = DQN_Conv(env.window, num_actions, input_shape)
+    Q = DQN_Conv(env.window, num_actions, input_shape).to(device)
+    target_Q = DQN_Conv(env.window, num_actions, input_shape).to(device)
 
     Q.apply(init_weights)
     target_Q.apply(init_weights)
