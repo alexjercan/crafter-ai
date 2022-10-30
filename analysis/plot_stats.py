@@ -67,7 +67,6 @@ def compute_success_rate(df: pd.DataFrame) -> pd.Series:
     return (df.loc[:, mask] > 0).sum(axis=0) / len(df)
 
 
-
 def plot_stats(logdir: str) -> None:
     eval_df = read_crafter_logs(logdir, mode="eval")
 
@@ -78,7 +77,11 @@ def plot_stats(logdir: str) -> None:
         ax.set_xlabel("step")
         ax.set_ylabel("avg return")
         fig.suptitle("Eval Average Return")
-        fig.savefig(pathlib.Path(logdir) / "eval_average_return.png", dpi=300, bbox_inches = "tight")
+        fig.savefig(
+            pathlib.Path(logdir) / "eval_average_return.png",
+            dpi=300,
+            bbox_inches="tight",
+        )
 
     train_df = read_crafter_logs(logdir, mode="train")
 
@@ -89,7 +92,9 @@ def plot_stats(logdir: str) -> None:
         ax.set_xlabel("step")
         ax.set_ylabel("loss")
         fig.suptitle("Train Loss")
-        fig.savefig(pathlib.Path(logdir) / "train_loss.png", dpi=300, bbox_inches = "tight")
+        fig.savefig(
+            pathlib.Path(logdir) / "train_loss.png", dpi=300, bbox_inches="tight"
+        )
 
     # plot train qsa
     if train_df is not None:
@@ -99,7 +104,9 @@ def plot_stats(logdir: str) -> None:
         ax.set_xlabel("step")
         ax.set_ylabel("q value")
         fig.suptitle("Q Value Function")
-        fig.savefig(pathlib.Path(logdir) / "train_qsa.png", dpi=300, bbox_inches = "tight")
+        fig.savefig(
+            pathlib.Path(logdir) / "train_qsa.png", dpi=300, bbox_inches="tight"
+        )
 
     eval_df = read_crafter_record(logdir, mode="eval")
 
@@ -113,7 +120,9 @@ def plot_stats(logdir: str) -> None:
         ax.set_xlabel("achievements")
         ax.set_ylabel("success rate")
         fig.suptitle("Eval Success Rate")
-        fig.savefig(pathlib.Path(logdir) / "eval_success.png", dpi=300, bbox_inches = "tight")
+        fig.savefig(
+            pathlib.Path(logdir) / "eval_success.png", dpi=300, bbox_inches="tight"
+        )
         eval_success_df.to_csv(pathlib.Path(logdir) / "eval_success.csv")
 
 
