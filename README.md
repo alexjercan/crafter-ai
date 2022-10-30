@@ -34,12 +34,30 @@ For executing multiple runs in parallel you could do:
 for i in $(seq 1 4); do python train.py --steps 250_000 --eval-interval 25_000 --logdir logdir/random_agent/$i & done
 ```
 
+You can also run other types of agents:
+
+- random (default)
+- dqn
+- ddqn
+- duel_dqn
+- duel_ddqn
+
+```bash
+python train.py --steps 10_000 --eval-interval 2500 --logdir logdir/dqn_agent/0 --agent dqn
+```
+
 ### Visualization
 
 Finally, you can visualize the _stats_ of the agent across the four runs using:
 
 ```bash
 python analysis/plot_stats.py --logdir logdir/random_agent
+```
+
+You can also visualize the _stats_ of all agents using:
+
+```console
+python analysis/plot_comp.py --logdir logdir
 ```
 
 For other performance metrics see the [plotting scripts](https://github.com/danijar/crafter/tree/main/analysis) in the original Crafter repo.
@@ -51,11 +69,12 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] Loss plot for training
 - [x] Success rate for each achievement
 - [ ] Distribution of actions taken with respect to time (step)
+- [x] Compare the methods (reward, success rates)
 
 [ ] More algorithms
 - [x] DQN
 - [x] DDQN
-- [ ] Dueling DQN
+- [x] Dueling DQN
 - [ ] Maybe try to penalize noop
 - [ ] Explore intrinsic reward for exploring new states
 
@@ -65,7 +84,7 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [ ] Create a replay buffer that randomly samples from prerecorded dataset
 
 [ ] More test runs to generate better plots
-- [ ] 3 Runs with Random
+- [x] 3 Runs with Random
 - [x] 3 Runs with DQN
 - [ ] 3 Runs with DDQN
 - [ ] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
