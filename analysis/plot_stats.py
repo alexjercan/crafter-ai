@@ -88,7 +88,7 @@ def plot_stats(logdir: str) -> None:
     # plot train loss
     if train_df is not None:
         fig, ax = plt.subplots()
-        sns.lineplot(x="step", y="loss", data=train_df, ax=ax)
+        sns.lineplot(x="step", y="loss", data=train_df, ax=ax, errorbar=("se", 2))
         ax.set_xlabel("step")
         ax.set_ylabel("loss")
         fig.suptitle("Train Loss")
@@ -99,8 +99,17 @@ def plot_stats(logdir: str) -> None:
     # plot train qsa
     if train_df is not None:
         fig, ax = plt.subplots()
-        sns.lineplot(x="step", y="qsa", data=train_df, label="qsa", ax=ax)
-        sns.lineplot(x="step", y="target_qsa", data=train_df, label="target_qsa", ax=ax)
+        sns.lineplot(
+            x="step", y="avg_qsa", data=train_df, label="qsa", ax=ax, errorbar=("se", 2)
+        )
+        sns.lineplot(
+            x="step",
+            y="avg_target_qsa",
+            data=train_df,
+            label="target_qsa",
+            ax=ax,
+            errorbar=("se", 2),
+        )
         ax.set_xlabel("step")
         ax.set_ylabel("q value")
         fig.suptitle("Q Value Function")
