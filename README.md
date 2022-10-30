@@ -48,9 +48,8 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 
 [ ] More visualization
 - [x] Episodic Reward for eval
-- [ ] Loss plot for training
-- [ ] Episodic reward for training
-- [ ] Success rate for each achievement
+- [x] Loss plot for training
+- [x] Success rate for each achievement
 - [ ] Distribution of actions taken with respect to time (step)
 
 [ ] More algorithms
@@ -61,6 +60,7 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [ ] Explore intrinsic reward for exploring new states
 
 [ ] More test runs to generate better plots
+- [ ] 3 Runs with Random
 - [ ] 3 Runs with DQN
 - [ ] 3 Runs with DDQN
 
