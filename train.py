@@ -294,7 +294,8 @@ class DQNAgent(Agent):
         if self._step_cnt % self._update_steps == 0:
             # sample from experience replay and do an update
             batch = self._buffer.sample()
-            self._update(*batch)
+            stats = self._update(*batch)
+            _save_train_stats(*stats, self._step_cnt, opt.logdir)
 
         # update the target estimator
         if self._step_cnt % self._update_target_steps == 0:
@@ -325,13 +326,6 @@ class DQNAgent(Agent):
         # compute target Q(s', a')
         target_qsa = rewards + self._gamma * qsa_ * (1 - done.float())
 
-        # at this step you should check the target values
-        # are looking about right :). You can use this code.
-        # if rewards.squeeze().sum().item() > 0.0:
-        #     print("R: ", rewards.squeeze())
-        #     print("T: ", target_qsa.squeeze())
-        #     print("D: ", done.squeeze())
-
         # compute the loss and average it over the entire batch
         loss = self._criterion(qsa, target_qsa)
 
@@ -339,6 +333,8 @@ class DQNAgent(Agent):
         self._optimizer.zero_grad()
         loss.backward()
         self._optimizer.step()
+
+        return loss.item(), qsa.detach().cpu(), target_qsa.cpu()
 
 
 class DDQNAgent(DQNAgent):
@@ -374,6 +370,8 @@ class DDQNAgent(DQNAgent):
         loss.backward()
         self._optimizer.step()
 
+        return loss.item(), qsa.detach().cpu(), target_qsa.cpu()
+
 
 def eval(agent: Agent, env: Env, crt_step: int, opt: Options) -> None:
     episodic_returns = []
@@ -400,6 +398,33 @@ def _save_eval_stats(episodic_returns: List[float], crt_step: int, path: str) ->
     )
     with open(path + "/eval_stats.pkl", "ab") as f:
         pickle.dump({"step": crt_step, "avg_return": avg_return}, f)
+
+
+def _save_train_stats(
+    loss: float, qsa: Tensor, target_qsa: Tensor, crt_step: int, path: str
+) -> None:
+    avg_qsa = qsa.mean().item()
+    avg_target_qsa = target_qsa.mean().item()
+    # tqdm.write(
+    #     "[{:06d}] train results: loss={:03.6f}, qsa={:03.2f} std={:03.2f} target_qsa={:03.2f} std={:03.2f}".format(
+    #         crt_step,
+    #         loss,
+    #         avg_qsa,
+    #         qsa.std().item(),
+    #         avg_target_qsa,
+    #         target_qsa.std().item(),
+    #     )
+    # )
+    with open(path + "/train_stats.pkl", "ab") as f:
+        pickle.dump(
+            {
+                "step": crt_step,
+                "loss": loss,
+                "avg_qsa": avg_qsa,
+                "avg_target_qsa": avg_target_qsa,
+            },
+            f,
+        )
 
 
 def _info(opt: Options) -> None:

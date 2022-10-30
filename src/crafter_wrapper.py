@@ -21,7 +21,7 @@ class Env:
         if mode == "train":
             env = crafter.Recorder(
                 env,
-                pathlib.Path(args.logdir),
+                pathlib.Path(args.logdir) / "train",
                 save_stats=True,
                 save_video=False,
                 save_episode=False,
@@ -29,8 +29,8 @@ class Env:
         if mode == "eval":
             env = crafter.Recorder(
                 env,
-                pathlib.Path(args.logdir) / "video",
-                save_stats=False,
+                pathlib.Path(args.logdir) / "eval",
+                save_stats=True,
                 save_video=args.video,
                 save_episode=False,
             )
