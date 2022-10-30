@@ -59,6 +59,11 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [ ] Maybe try to penalize noop
 - [ ] Explore intrinsic reward for exploring new states
 
+[ ] More data
+- [ ] Find a dataset with prerecorded good gameplay
+- [ ] Record some gameplay using `python3 -m crafter.run_gui --record logdir/human_agent/0/eval`
+- [ ] Create a replay buffer that randomly samples from prerecorded dataset
+
 [ ] More test runs to generate better plots
 - [ ] 3 Runs with Random
 - [ ] 3 Runs with DQN
