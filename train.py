@@ -101,6 +101,45 @@ class ConvModel(nn.Module):
         return self.classifier(x)
 
 
+class DuelConvModel(nn.Module):
+    def __init__(
+        self, in_features: int, num_actions: int, image_size: Tuple[int, int] = (64, 64)
+    ):
+        super().__init__()
+        self.in_features = in_features
+        self.num_actions = num_actions
+
+        blocks = [
+            ConvBlock(in_features, 16, (3, 3), padding=1, after=["relu"]),
+            nn.MaxPool2d(3, stride=2, padding=1),
+            ConvBlock(16, 16, (3, 3), padding=1, after=["relu"]),
+            nn.MaxPool2d(3, stride=2, padding=1),
+        ]
+
+        self.blocks = nn.Sequential(*blocks)
+        self.value = nn.Sequential(
+            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 128),
+            nn.ReLU(),
+            nn.Linear(128, 1),
+        )
+        self.advantage = nn.Sequential(
+            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 128),
+            nn.ReLU(),
+            nn.Linear(128, num_actions),
+        )
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.blocks(x)
+        x = x.reshape(x.shape[0], -1)
+
+        values = self.value(x)
+        advantages = self.advantage(x)
+
+        advantages = advantages - advantages.mean(dim=1, keepdim=True)
+
+        return values + advantages
+
+
 class ReplayMemory:
     """Cyclic buffer that stores the transitions of the game on CPU RAM."""
 
@@ -482,6 +521,38 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             update_steps=2,
         )
 
+    if opt.agent == "duel_dqn":
+        net = DuelConvModel(
+            opt.history_length, env.action_space.n, env.observation_space.shape
+        ).to(opt.device)
+
+        return DQNAgent(
+            net,
+            ReplayMemory(size=1_000, batch_size=32, opt=opt),
+            nn.HuberLoss(),
+            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
+            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
+            env.action_space.n,
+            warmup_steps=100,
+            update_steps=2,
+        )
+
+    if opt.agent == "duel_ddqn":
+        net = DuelConvModel(
+            opt.history_length, env.action_space.n, env.observation_space.shape
+        ).to(opt.device)
+
+        return DDQNAgent(
+            net,
+            ReplayMemory(size=1_000, batch_size=32, opt=opt),
+            nn.HuberLoss(),
+            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
+            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
+            env.action_space.n,
+            warmup_steps=100,
+            update_steps=2,
+        )
+
     raise NotImplementedError(agent)
 
 
@@ -572,7 +643,7 @@ def get_options() -> Options:
         dest="agent",
         type=str,
         default="random",
-        help="The agent to use: random, dqn, ddqn",
+        help="The agent to use: random, dqn, ddqn, duel_dqn, duel_ddqn",
     )
     args = parser.parse_args()
     return Options(
