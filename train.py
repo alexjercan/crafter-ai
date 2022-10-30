@@ -1,4 +1,6 @@
+import os
 import torch
+import pathlib
 import argparse
 import itertools
 import pickle
@@ -476,7 +478,7 @@ def _info(opt: Options) -> None:
             "Warning, logdir path should end in a number indicating a separate"
             + "training run, else the results might be overwritten."
         )
-    if Path(opt.logdir).exists():
+    if any(Path(opt.logdir).iterdir()):
         print("Warning! Logdir path exists, results can be corrupted.")
     print(f"Saving results in {opt.logdir}.")
     print(
@@ -599,7 +601,7 @@ def get_options() -> Options:
     the evaluation interval.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument("--logdir", default="logdir/random_agent/0")
+    parser.add_argument("--logdir", default="logdir/")
     parser.add_argument(
         "--steps",
         dest="steps",
@@ -646,8 +648,15 @@ def get_options() -> Options:
         help="The agent to use: random, dqn, ddqn, duel_dqn, duel_ddqn",
     )
     args = parser.parse_args()
+
+    logdir = os.path.join(args.logdir, f"{args.agent}_agent")
+    os.makedirs(logdir, exist_ok=True)
+    run = str(len([f for f in os.scandir(logdir) if f.is_dir()]))
+    logdir = os.path.join(logdir, run)
+    os.makedirs(logdir, exist_ok=True)
+
     return Options(
-        logdir=args.logdir,
+        logdir=logdir,
         steps=args.steps,
         history_length=args.history_length,
         eval_episodes=args.eval_episodes,

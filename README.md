@@ -21,7 +21,7 @@ pip install -r requirements.txt
 For running the Random Agent execute:
 
 ```bash
-python train.py --steps 10_000 --eval-interval 2500 --logdir logdir/random_agent/0
+python train.py --steps 10_000 --eval-interval 2500
 ```
 
 You can specify other types of agents using `--agent`. Implemented `random`, `dqn`, `ddqn`.
@@ -31,7 +31,7 @@ This will run the Random Agent for 10_000 steps and evaluate it every 2500 steps
 For executing multiple runs in parallel you could do:
 
 ```bash
-for i in $(seq 1 4); do python train.py --steps 250_000 --eval-interval 25_000 --logdir logdir/random_agent/$i & done
+for i in $(seq 1 4); do python train.py --steps 250_000 --eval-interval 25_000 & done
 ```
 
 You can also run other types of agents:
@@ -43,7 +43,7 @@ You can also run other types of agents:
 - duel_ddqn
 
 ```bash
-python train.py --steps 10_000 --eval-interval 2500 --logdir logdir/dqn_agent/0 --agent dqn
+python train.py --steps 10_000 --eval-interval 2500 --agent dqn
 ```
 
 ### Visualization
