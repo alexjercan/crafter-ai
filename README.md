@@ -4,7 +4,7 @@ This folder contains the following code:
 
 - `train.py` A basic training loop with a random agent you can use for your own agent. Feel free to modify it at will.
 - `src/crafter_wrapper.py` A wrapper over the `Crafter` environment that provides basic logging and observation preprocessing.
-- `analysis/plot_eval_performance.py` A simple script for plotting the performance of your agent during evaluation (not training).
+- `analysis/plot_stats.py` A simple script for plotting the stats of your agent.
 
 ## Instructions
 
@@ -36,10 +36,10 @@ for i in $(seq 1 4); do python train.py --steps 250_000 --eval-interval 25_000 -
 
 ### Visualization
 
-Finally, you can visualize the _evaluation_ performance of the agent across the four runs using:
+Finally, you can visualize the _stats_ of the agent across the four runs using:
 
 ```bash
-python analysis/plot_eval_performance.py --logdir logdir/random_agent
+python analysis/plot_stats.py --logdir logdir/random_agent
 ```
 
 For other performance metrics see the [plotting scripts](https://github.com/danijar/crafter/tree/main/analysis) in the original Crafter repo.
