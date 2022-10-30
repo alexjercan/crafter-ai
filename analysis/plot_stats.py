@@ -62,9 +62,10 @@ def read_crafter_record(
     return pd.concat(runs, ignore_index=True)
 
 
-def compute_success_rate(df: pd.DataFrame) -> pd.Series:
+def compute_success_rate(df: pd.DataFrame) -> pd.DataFrame:
     mask = df.columns.str.startswith("achievement_")
-    return (df.loc[:, mask] > 0).sum(axis=0) / len(df)
+    df = (df.loc[:, mask] > 0).sum(axis=0) / len(df)
+    return pd.DataFrame(columns=["rate"], data=df)
 
 
 def plot_stats(logdir: str) -> None:
@@ -123,7 +124,7 @@ def plot_stats(logdir: str) -> None:
     if eval_df is not None:
         eval_success_df = compute_success_rate(eval_df)
         fig, ax = plt.subplots()
-        sns.barplot(x=eval_success_df.index, y=eval_success_df.values, ax=ax)
+        sns.barplot(x=eval_success_df.index, y=eval_success_df["rate"], ax=ax)
         labels = list(map(lambda a: a.split("achievement_")[-1], eval_success_df.index))
         ax.set_xticklabels(labels, rotation=90)
         ax.set_xlabel("achievements")
