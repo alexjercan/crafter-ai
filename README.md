@@ -66,6 +66,7 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 
 [ ] More test runs to generate better plots
 - [ ] 3 Runs with Random
-- [ ] 3 Runs with DQN
+- [x] 3 Runs with DQN
 - [ ] 3 Runs with DDQN
+- [ ] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
 
