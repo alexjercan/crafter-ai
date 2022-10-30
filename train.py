@@ -26,6 +26,7 @@ class Options:
     eval_interval: int
     video: bool
     device: str
+    agent: str
 
 
 class ConvBlock(nn.Module):
@@ -405,16 +406,17 @@ def _save_train_stats(
 ) -> None:
     avg_qsa = qsa.mean().item()
     avg_target_qsa = target_qsa.mean().item()
-    # tqdm.write(
-    #     "[{:06d}] train results: loss={:03.6f}, qsa={:03.2f} std={:03.2f} target_qsa={:03.2f} std={:03.2f}".format(
-    #         crt_step,
-    #         loss,
-    #         avg_qsa,
-    #         qsa.std().item(),
-    #         avg_target_qsa,
-    #         target_qsa.std().item(),
-    #     )
-    # )
+    if False:
+        tqdm.write(
+            "[{:06d}] train results: loss={:03.6f}, qsa={:03.2f} std={:03.2f} target_qsa={:03.2f} std={:03.2f}".format(
+                crt_step,
+                loss,
+                avg_qsa,
+                qsa.std().item(),
+                avg_target_qsa,
+                target_qsa.std().item(),
+            )
+        )
     with open(path + "/train_stats.pkl", "ab") as f:
         pickle.dump(
             {
@@ -444,26 +446,52 @@ def _info(opt: Options) -> None:
     )
 
 
+def _get_agent(opt: Options, env: Env) -> Agent:
+    if opt.agent == "random":
+        return RandomAgent(env.action_space.n)
+
+    if opt.agent == "dqn":
+        net = ConvModel(
+            opt.history_length, env.action_space.n, env.observation_space.shape
+        ).to(opt.device)
+
+        return DQNAgent(
+            net,
+            ReplayMemory(size=1_000, batch_size=32, opt=opt),
+            nn.HuberLoss(),
+            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
+            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
+            env.action_space.n,
+            warmup_steps=100,
+            update_steps=2,
+        )
+
+    if opt.agent == "ddqn":
+        net = ConvModel(
+            opt.history_length, env.action_space.n, env.observation_space.shape
+        ).to(opt.device)
+
+        return DDQNAgent(
+            net,
+            ReplayMemory(size=1_000, batch_size=32, opt=opt),
+            nn.HuberLoss(),
+            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
+            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
+            env.action_space.n,
+            warmup_steps=100,
+            update_steps=2,
+        )
+
+    raise NotImplementedError(agent)
+
+
 def main(opt: Options) -> None:
     _info(opt)
 
     env = Env("train", opt)
     eval_env = Env("eval", opt)
 
-    net = ConvModel(
-        opt.history_length, env.action_space.n, env.observation_space.shape
-    ).to(opt.device)
-
-    agent = DQNAgent(
-        net,
-        ReplayMemory(size=1_000, batch_size=32, opt=opt),
-        nn.HuberLoss(),
-        optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
-        get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
-        env.action_space.n,
-        warmup_steps=100,
-        update_steps=2,
-    )
+    agent = _get_agent(opt, env)
 
     # main loop
     ep_cnt, step_cnt, done = 0, 0, True
@@ -539,6 +567,13 @@ def get_options() -> Options:
         action="store_true",
         help="Save video of eval process",
     )
+    parser.add_argument(
+        "--agent",
+        dest="agent",
+        type=str,
+        default="random",
+        help="The agent to use: random, dqn, ddqn",
+    )
     args = parser.parse_args()
     return Options(
         logdir=args.logdir,
@@ -548,6 +583,7 @@ def get_options() -> Options:
         eval_interval=args.eval_interval,
         video=args.video,
         device="cuda" if torch.cuda.is_available() else "cpu",
+        agent=args.agent,
     )
 
 
