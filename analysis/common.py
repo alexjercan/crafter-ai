@@ -130,6 +130,7 @@ def read_logs(logdir: str, mode: str = "eval") -> pd.DataFrame:
         df = read_crafter_logs(os.path.join(logdir, agent), mode=mode)
         if df is None:
             print(f"Warning: Agent {agent} is missing logs")
+            continue
 
         df["agent"] = agent
         dfs.append(df)
