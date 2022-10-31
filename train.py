@@ -14,7 +14,7 @@ from copy import deepcopy
 from collections import deque
 from tqdm.auto import tqdm
 from pathlib import Path
-from src.crafter_wrapper import Env
+from src.crafter_wrapper import Env, human_to_buffer
 from torch import Tensor
 from typing import Iterator, Tuple, List
 
@@ -182,6 +182,37 @@ class ReplayMemory:
         s, a, r, s_, d = zip(*random.sample(self._buffer, self._batch_size))
 
         # reshape, convert if needed, put on device
+        return (
+            torch.cat(s, 0).to(self._device),
+            torch.tensor(a, dtype=torch.int64).unsqueeze(1).to(self._device),
+            torch.tensor(r, dtype=torch.float32).unsqueeze(1).to(self._device),
+            torch.cat(s_, 0).to(self._device),
+            torch.tensor(d, dtype=torch.uint8).unsqueeze(1).to(self._device),
+        )
+
+    def __len__(self) -> int:
+        return len(self._buffer)
+
+
+class ExtendedMemory(ReplayMemory):
+    def __init__(
+        self,
+        opt: Options,
+        replaydir: str = "logdir/human_agent/",
+        size: int = 1000,
+        batch_size: int = 32,
+        alpha: float = 0.5, # the chance that we get tuple from human gameplay
+    ):
+        super().__init__(opt, size, batch_size)
+        self._human = human_to_buffer(replaydir, opt.history_length)
+        self._alpha = alpha
+
+    def sample(self) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        if self._alpha < torch.rand(1).item():
+            s, a, r, s_, d = zip(*random.sample(self._buffer, self._batch_size))
+        else:
+            s, a, r, s_, d = zip(*random.sample(self._human, self._batch_size))
+
         return (
             torch.cat(s, 0).to(self._device),
             torch.tensor(a, dtype=torch.int64).unsqueeze(1).to(self._device),
@@ -491,30 +522,24 @@ def _get_agent(opt: Options, env: Env) -> Agent:
     if opt.agent == "random":
         return RandomAgent(env.action_space.n)
 
-    if opt.agent == "dqn":
+    if "ext" in opt.agent:
+        buffer = ExtendedMemory(size=1_000, batch_size=32, alpha=0.5, opt=opt)
+    else:
+        ReplayMemory(size=1_000, batch_size=32, opt=opt),
+
+    if "duel" in opt.agent:
+        net = DuelConvModel(
+            opt.history_length, env.action_space.n, env.observation_space.shape
+        ).to(opt.device)
+    else:
         net = ConvModel(
             opt.history_length, env.action_space.n, env.observation_space.shape
         ).to(opt.device)
 
-        return DQNAgent(
-            net,
-            ReplayMemory(size=1_000, batch_size=32, opt=opt),
-            nn.HuberLoss(),
-            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
-            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
-            env.action_space.n,
-            warmup_steps=100,
-            update_steps=2,
-        )
-
-    if opt.agent == "ddqn":
-        net = ConvModel(
-            opt.history_length, env.action_space.n, env.observation_space.shape
-        ).to(opt.device)
-
+    if "ddqn" in opt.agent:
         return DDQNAgent(
             net,
-            ReplayMemory(size=1_000, batch_size=32, opt=opt),
+            buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
             get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
@@ -523,30 +548,10 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             update_steps=2,
         )
 
-    if opt.agent == "duel_dqn":
-        net = DuelConvModel(
-            opt.history_length, env.action_space.n, env.observation_space.shape
-        ).to(opt.device)
-
+    if "dqn" in opt.agent:
         return DQNAgent(
             net,
-            ReplayMemory(size=1_000, batch_size=32, opt=opt),
-            nn.HuberLoss(),
-            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
-            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
-            env.action_space.n,
-            warmup_steps=100,
-            update_steps=2,
-        )
-
-    if opt.agent == "duel_ddqn":
-        net = DuelConvModel(
-            opt.history_length, env.action_space.n, env.observation_space.shape
-        ).to(opt.device)
-
-        return DDQNAgent(
-            net,
-            ReplayMemory(size=1_000, batch_size=32, opt=opt),
+            buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
             get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
@@ -645,7 +650,7 @@ def get_options() -> Options:
         dest="agent",
         type=str,
         default="random",
-        help="The agent to use: random, dqn, ddqn, duel_dqn, duel_ddqn",
+        help="The agent to use: random, dqn, ddqn with ext and duel modifiers",
     )
     args = parser.parse_args()
 
