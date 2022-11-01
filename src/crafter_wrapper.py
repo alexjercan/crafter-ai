@@ -173,4 +173,4 @@ if __name__ == "__main__":
         "done": np.array(dones),
     }
 
-    np.savez_compressed("replay.npz", **data)
+    np.savez_compressed(cfg.logdir + "/replay.npz", **data)
