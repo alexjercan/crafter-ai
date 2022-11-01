@@ -74,7 +74,7 @@ class Env:
 class ReplayEnv:
     def __init__(self, replaydir: str):
         self.replaydir = replaydir
-        self.filenames = sorted(list(pathlib.Path(replaydir).glob(f"**/*.npz")))
+        self.filenames = sorted(list(pathlib.Path(replaydir).glob(f"**/*/*.npz")))
 
         self.file_idx = 0
         self.data_idx = 0
