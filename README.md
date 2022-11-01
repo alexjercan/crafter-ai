@@ -39,8 +39,10 @@ You can also run other types of agents:
 - random (default)
 - dqn
 - ddqn
-- duel_dqn
-- duel_ddqn
+- duel (modifier)
+- ext (modifier)
+
+Modifier means that it can be used as a decorator: `ext_duel_ddqn`
 
 ```bash
 python train.py --steps 10_000 --eval-interval 2500 --agent dqn
@@ -64,28 +66,29 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 
 ## TODO
 
-[ ] More visualization
+1. [ ] More visualization
 - [x] Episodic Reward for eval
 - [x] Loss plot for training
 - [x] Success rate for each achievement
 - [ ] Distribution of actions taken with respect to time (step)
 - [x] Compare the methods (reward, success rates)
 
-[ ] More algorithms
+2. [ ] More algorithms
 - [x] DQN
 - [x] DDQN
 - [x] Dueling DQN
 - [ ] Maybe try to penalize noop
 - [ ] Explore intrinsic reward for exploring new states
 
-[ ] More data
+3. [ ] More data
 - [ ] Find a dataset with prerecorded good gameplay
-- [ ] Record some gameplay using `python3 -m crafter.run_gui --record logdir/human_agent/0/eval`
-- [ ] Create a replay buffer that randomly samples from prerecorded dataset
+- [x] Record some gameplay using `python3 -m crafter.run_gui --record logdir/human_agent/0/eval`
+- [x] Create a replay buffer that randomly samples from prerecorded dataset
 
-[ ] More test runs to generate better plots
+4. [ ] More test runs to generate better plots
 - [x] 3 Runs with Random
 - [x] 3 Runs with DQN
-- [ ] 3 Runs with DDQN
+- [x] 3 Runs with DDQN
 - [ ] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
+- [ ] 3 Runs with extended replay buffer (from human)
 
