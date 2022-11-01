@@ -201,7 +201,7 @@ class ExtendedMemory(ReplayMemory):
         replaydir: str = "logdir/human_agent/",
         size: int = 1000,
         batch_size: int = 32,
-        alpha: float = 0.5, # the chance that we get tuple from human gameplay
+        alpha: float = 0.5,  # the chance that we get tuple from human gameplay
     ):
         super().__init__(opt, size, batch_size)
         self._human = human_to_buffer(replaydir, opt.history_length)
