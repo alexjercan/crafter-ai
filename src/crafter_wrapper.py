@@ -103,7 +103,7 @@ class ReplayEnv:
 
 def human_to_buffer(
     replaydir: str, history_length: int
-) -> List[Tuple[np.array, int, float, np.array, bool]]:
+) -> List[Tuple[np.ndarray, int, float, np.ndarray, bool]]:
     class Scuff:
         def __init__(self, history_length):
             self.logdir = "logdir"
@@ -174,4 +174,3 @@ if __name__ == "__main__":
     }
 
     np.savez_compressed("replay.npz", **data)
-
