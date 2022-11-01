@@ -525,7 +525,7 @@ def _get_agent(opt: Options, env: Env) -> Agent:
     if "ext" in opt.agent:
         buffer = ExtendedMemory(size=1_000, batch_size=32, alpha=0.5, opt=opt)
     else:
-        ReplayMemory(size=1_000, batch_size=32, opt=opt),
+        buffer = ReplayMemory(size=1_000, batch_size=32, opt=opt)
 
     if "duel" in opt.agent:
         net = DuelConvModel(
