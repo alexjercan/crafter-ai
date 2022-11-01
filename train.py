@@ -518,30 +518,37 @@ def _info(opt: Options) -> None:
     )
 
 
+def _get_memory(opt: Options) -> ReplayMemory:
+    if "ext" in opt.agent:
+        return ExtendedMemory(size=1_000, batch_size=32, alpha=0.5, opt=opt)
+
+    return ReplayMemory(size=1_000, batch_size=32, opt=opt)
+
+
+def _get_net(opt: Options, env: Env) -> nn.Module:
+    if "duel" in opt.agent:
+        return DuelConvModel(
+            opt.history_length, env.action_space.n, env.observation_space.shape
+        ).to(opt.device)
+
+    return ConvModel(
+        opt.history_length, env.action_space.n, env.observation_space.shape
+    ).to(opt.device)
+
+
 def _get_agent(opt: Options, env: Env) -> Agent:
     if opt.agent == "random":
         return RandomAgent(env.action_space.n)
 
-    if "ext" in opt.agent:
-        buffer = ExtendedMemory(size=1_000, batch_size=32, alpha=0.5, opt=opt)
-    else:
-        buffer = ReplayMemory(size=1_000, batch_size=32, opt=opt)
-
-    if "duel" in opt.agent:
-        net = DuelConvModel(
-            opt.history_length, env.action_space.n, env.observation_space.shape
-        ).to(opt.device)
-    else:
-        net = ConvModel(
-            opt.history_length, env.action_space.n, env.observation_space.shape
-        ).to(opt.device)
+    buffer = _get_memory(opt)
+    net = _get_net(opt, env)
 
     if "ddqn" in opt.agent:
         return DDQNAgent(
             net,
             buffer,
             nn.HuberLoss(),
-            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
+            optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
             get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
             env.action_space.n,
             warmup_steps=100,
@@ -553,14 +560,14 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             net,
             buffer,
             nn.HuberLoss(),
-            optim.Adam(net.parameters(), lr=1e-3, eps=1e-4),
+            optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
             get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
             env.action_space.n,
             warmup_steps=100,
             update_steps=2,
         )
 
-    raise NotImplementedError(agent)
+    raise NotImplementedError(opt.agent)
 
 
 def main(opt: Options) -> None:
