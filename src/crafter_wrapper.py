@@ -16,7 +16,8 @@ class Env:
         assert mode in (
             "train",
             "eval",
-        ), "`mode` argument can either be `train` or `eval`"
+            "yeet",
+        ), "`mode` argument can either be `train`, `eval` or `yeet`"
         self.device = args.device
         env = crafter.Env()
         if mode == "train":
@@ -35,6 +36,9 @@ class Env:
                 save_video=args.video,
                 save_episode=False,
             )
+        if mode == "yeet":
+            # You are cool :)
+            pass
         self._obs_dim = 64
         self.env = env
         self.window = args.history_length  # Number of frames to concatenate
@@ -113,7 +117,7 @@ def human_to_buffer(
 
     args = Scuff(history_length)
 
-    env = Env("train", args)
+    env = Env("yeet", args)
     env.env = ReplayEnv(replaydir)
 
     state = env.reset()
