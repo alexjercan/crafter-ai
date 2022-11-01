@@ -383,7 +383,7 @@ class DQNAgent(Agent):
         rewards: Tensor,
         states_: Tensor,
         done: Tensor,
-    ) -> None:
+    ) -> Tuple[float, Tensor, Tensor]:
         # compute the DeepQNetwork update. Carefull not to include the
         # target network in the computational graph.
 
@@ -418,7 +418,7 @@ class DDQNAgent(DQNAgent):
         rewards: Tensor,
         states_: Tensor,
         done: Tensor,
-    ) -> None:
+    ) -> Tuple[float, Tensor, Tensor]:
         # compute the DeepQNetwork update. Carefull not to include the
         # target network in the computational graph.
 
