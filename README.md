@@ -40,7 +40,7 @@ You can also run other types of agents:
 - dqn
 - ddqn
 - duel (modifier)
-- ext (modifier)
+- ext/eext (modifier)
 
 Modifier means that it can be used as a decorator: `ext_duel_ddqn`
 

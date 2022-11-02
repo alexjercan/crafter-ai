@@ -16,7 +16,7 @@ from tqdm.auto import tqdm
 from pathlib import Path
 from src.crafter_wrapper import Env, human_to_buffer
 from torch import Tensor
-from typing import Iterator, Tuple, List
+from typing import Iterator, Tuple, List, Optional
 
 
 @dataclass
@@ -201,14 +201,14 @@ class ExtendedMemory(ReplayMemory):
         replaydir: str = "logdir/human_agent/",
         size: int = 1000,
         batch_size: int = 32,
-        alpha: float = 0.5,  # the chance that we get tuple from human gameplay
+        epsilon: float = 0.5,  # the chance that we get tuple from human gameplay
     ):
         super().__init__(opt, size, batch_size)
         self._human = human_to_buffer(replaydir, opt.history_length)
-        self._alpha = alpha
+        self._epsilon = epsilon
 
     def sample(self) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
-        if self._alpha < torch.rand(1).item():
+        if self._epsilon < torch.rand(1).item():
             s, a, r, s_, d = zip(*random.sample(self._buffer, self._batch_size))
         else:
             s, a, r, s_, d = zip(*random.sample(self._human, self._batch_size))
@@ -221,8 +221,33 @@ class ExtendedMemory(ReplayMemory):
             torch.tensor(d, dtype=torch.uint8).unsqueeze(1).to(self._device),
         )
 
-    def __len__(self) -> int:
-        return len(self._buffer)
+
+class EpsilonExtendedMemory(ReplayMemory):
+    def __init__(
+        self,
+        opt: Options,
+        replaydir: str = "logdir/human_agent/",
+        size: int = 1000,
+        batch_size: int = 32,
+        epsilon: Optional[Iterator[float]] = None,
+    ):
+        super().__init__(opt, size, batch_size)
+        self._human = human_to_buffer(replaydir, opt.history_length)
+        self._epsilon = epsilon or get_epsilon_schedule(start=1.0, end=0.1, steps=4000)
+
+    def sample(self) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
+        if next(self._epsilon) < torch.rand(1).item():
+            s, a, r, s_, d = zip(*random.sample(self._buffer, self._batch_size))
+        else:
+            s, a, r, s_, d = zip(*random.sample(self._human, self._batch_size))
+
+        return (
+            torch.cat(s, 0).to(self._device),
+            torch.tensor(a, dtype=torch.int64).unsqueeze(1).to(self._device),
+            torch.tensor(r, dtype=torch.float32).unsqueeze(1).to(self._device),
+            torch.cat(s_, 0).to(self._device),
+            torch.tensor(d, dtype=torch.uint8).unsqueeze(1).to(self._device),
+        )
 
 
 def get_epsilon_schedule(start=1.0, end=0.1, steps=500) -> Iterator[float]:
@@ -519,8 +544,15 @@ def _info(opt: Options) -> None:
 
 
 def _get_memory(opt: Options) -> ReplayMemory:
+    if "eext" in opt.agent:
+        return EpsilonExtendedMemory(
+            size=1_000,
+            batch_size=32,
+            epsilon=get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
+            opt=opt,
+        )
     if "ext" in opt.agent:
-        return ExtendedMemory(size=1_000, batch_size=32, alpha=0.5, opt=opt)
+        return ExtendedMemory(size=1_000, batch_size=32, epsilon=0.5, opt=opt)
 
     return ReplayMemory(size=1_000, batch_size=32, opt=opt)
 
@@ -657,7 +689,7 @@ def get_options() -> Options:
         dest="agent",
         type=str,
         default="random",
-        help="The agent to use: random, dqn, ddqn with ext and duel modifiers",
+        help="The agent to use: random, dqn, ddqn with eex/ext and duel modifiers",
     )
     args = parser.parse_args()
 
