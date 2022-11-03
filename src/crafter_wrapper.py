@@ -71,6 +71,19 @@ class Env:
         return torch.stack(list(self.state_buffer), 0).unsqueeze(0), reward, done, info
 
 
+class NoopBadEnv(Env):
+    def __init__(self, mode, args):
+        super().__init__(mode, args)
+        self.noop_idx = self.env.action_names.index("noop")
+
+    def step(self, action):
+        state, reward, done, info = super().step(action)
+        if action == self.noop_idx:
+            reward = reward - 0.1
+
+        return state, reward, done, info
+
+
 class ReplayEnv:
     def __init__(self, replaydir: str):
         self.replaydir = replaydir

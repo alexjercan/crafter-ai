@@ -14,7 +14,7 @@ from copy import deepcopy
 from collections import deque
 from tqdm.auto import tqdm
 from pathlib import Path
-from src.crafter_wrapper import Env, human_to_buffer
+from src.crafter_wrapper import Env, NoopBadEnv, human_to_buffer
 from torch import Tensor
 from typing import Iterator, Tuple, List, Optional
 
@@ -602,10 +602,17 @@ def _get_agent(opt: Options, env: Env) -> Agent:
     raise NotImplementedError(opt.agent)
 
 
+def _get_env(mode: str, opt: Options) -> Env:
+    if "noop" in opt.agent:
+        return NoopBadEnv(mode, opt)
+
+    return Env(mode, opt)
+
+
 def main(opt: Options) -> None:
     _info(opt)
 
-    env = Env("train", opt)
+    env = _get_env("train", opt)
     eval_env = Env("eval", opt)
 
     agent = _get_agent(opt, env)
