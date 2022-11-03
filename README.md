@@ -36,11 +36,12 @@ for i in $(seq 1 4); do python train.py --steps 250_000 --eval-interval 25_000 &
 
 You can also run other types of agents:
 
-- random (default)
-- dqn
-- ddqn
-- duel (modifier)
-- ext/eext (modifier)
+- random (default)      Random agent
+- dqn                   DQN Agent
+- ddqn                  Double DQN Agent
+- duel (modifier)       Use duel NN architecture with DQN or DDQN Agents
+- ext/eext (modifier)   Use extra dataset recorded by the pro gamer himself with constant epsilon (ext) or with epsilon decay (eext)
+- noop (modifier)       Use the NoopBadEnv environment for training which substracts 0.1 from the reward for noops
 
 Modifier means that it can be used as a decorator: `ext_duel_ddqn`
 
@@ -77,8 +78,9 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] DQN
 - [x] DDQN
 - [x] Dueling DQN
-- [ ] Maybe try to penalize noop
+- [x] Maybe try to penalize noop
 - [ ] Explore intrinsic reward for exploring new states
+- [ ] Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
 
 3. [ ] More data
 - [ ] Find a dataset with prerecorded good gameplay
@@ -89,6 +91,8 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] 3 Runs with Random
 - [x] 3 Runs with DQN
 - [x] 3 Runs with DDQN
-- [ ] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
-- [ ] 3 Runs with extended replay buffer (from human)
+- [x] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
+- [x] 3 Runs with extended replay buffer (from human)
+- [ ] 3 Runs with extended epsilon decay replay buffer (from human)
+- [ ] 3 Runs with noop is bad environment and all modifiers YEET
 
