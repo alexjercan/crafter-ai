@@ -233,7 +233,7 @@ class EpsilonExtendedMemory(ReplayMemory):
     ):
         super().__init__(opt, size, batch_size)
         self._human = human_to_buffer(replaydir, opt.history_length)
-        self._epsilon = epsilon or get_epsilon_schedule(start=1.0, end=0.1, steps=4000)
+        self._epsilon = epsilon or get_epsilon_schedule(start=0.5, end=0.1, steps=4000)
 
     def sample(self) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         if next(self._epsilon) < torch.rand(1).item():
@@ -548,7 +548,7 @@ def _get_memory(opt: Options) -> ReplayMemory:
         return EpsilonExtendedMemory(
             size=1_000,
             batch_size=32,
-            epsilon=get_epsilon_schedule(start=1.0, end=0.1, steps=50_000),
+            epsilon=get_epsilon_schedule(start=0.5, end=0.1, steps=50_000),
             opt=opt,
         )
     if "ext" in opt.agent:
