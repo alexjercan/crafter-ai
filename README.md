@@ -93,6 +93,6 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] 3 Runs with DDQN
 - [x] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
 - [x] 3 Runs with extended replay buffer (from human)
-- [ ] 3 Runs with extended epsilon decay replay buffer (from human)
+- [x] 3 Runs with extended epsilon decay replay buffer (from human)
 - [ ] 3 Runs with noop is bad environment and all modifiers YEET
 
