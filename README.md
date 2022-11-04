@@ -71,8 +71,9 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] Episodic Reward for eval
 - [x] Loss plot for training
 - [x] Success rate for each achievement
-- [ ] Distribution of actions taken with respect to time (step)
+- [x] Distribution of actions taken with respect to time (step)
 - [x] Compare the methods (reward, success rates)
+- [ ] Maybe try to create a plot like in the duel dqn paper?
 
 2. [ ] More algorithms
 - [x] DQN
@@ -94,5 +95,6 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] 3 Runs with Duel DQN/DDQN depend on which will be better I guess
 - [x] 3 Runs with extended replay buffer (from human)
 - [x] 3 Runs with extended epsilon decay replay buffer (from human)
-- [ ] 3 Runs with noop is bad environment and all modifiers YEET
+- [x] 3 Runs with noop is bad environment and all modifiers YEET
+- [ ] 3 Runs with noop is bad but moving is ok?
 

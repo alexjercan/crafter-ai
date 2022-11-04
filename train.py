@@ -14,7 +14,7 @@ from copy import deepcopy
 from collections import deque
 from tqdm.auto import tqdm
 from pathlib import Path
-from src.crafter_wrapper import Env, NoopBadEnv, human_to_buffer
+from src.crafter_wrapper import Env, NoopBadEnv, MoveOkEnv, human_to_buffer
 from torch import Tensor
 from typing import Iterator, Tuple, List, Optional
 
@@ -606,6 +606,8 @@ def _get_agent(opt: Options, env: Env) -> Agent:
 def _get_env(mode: str, opt: Options) -> Env:
     if "noop" in opt.agent:
         return NoopBadEnv(mode, opt)
+    if "move" in opt.agent:
+        return MoveOkEnv(mode, opt)
 
     return Env(mode, opt)
 

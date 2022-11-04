@@ -38,7 +38,7 @@ class Env:
             )
         if mode == "yeet":
             # You are cool :)
-            pass # the vibe check
+            pass  # the vibe check
         self._obs_dim = 64
         self.env = env
         self.window = args.history_length  # Number of frames to concatenate
@@ -80,6 +80,24 @@ class NoopBadEnv(Env):
         state, reward, done, info = super().step(action)
         if action == self.noop_idx:
             reward = reward - 0.1
+
+        return state, reward, done, info
+
+
+class MoveOkEnv(Env):
+    def __init__(self, mode, args):
+        super().__init__(mode, args)
+        self.move_ids = [
+            self.env.action_names.index("move_left"),
+            self.env.action_names.index("move_right"),
+            self.env.action_names.index("move_up"),
+            self.env.action_names.index("move_down"),
+        ]
+
+    def step(self, action):
+        state, reward, done, info = super().step(action)
+        if action in self.move_ids:
+            reward = reward + 0.025
 
         return state, reward, done, info
 
