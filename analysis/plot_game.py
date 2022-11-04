@@ -17,7 +17,7 @@ def plot_one_game(filename: str) -> None:
 
     if actions is not None:
         fig, ax = plt.subplots()
-        ax.hist(actions, bins=np.arange(len(action_names))-0.5)
+        ax.hist(actions, bins=np.arange(len(action_names)) - 0.5)
 
         ax.set_xticks(range(len(action_names)))
         ax.set_xticklabels(action_names, rotation=90)
@@ -37,7 +37,6 @@ def plot_game(logdir: str) -> None:
 
     for filename in filenames:
         plot_one_game(filename)
-
 
 
 if __name__ == "__main__":
