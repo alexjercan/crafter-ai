@@ -26,6 +26,7 @@ class Options:
     history_length: int
     eval_episodes: int
     eval_interval: int
+    game: bool
     video: bool
     device: str
     agent: str
@@ -692,6 +693,12 @@ def get_options() -> Options:
         help="Save video of eval process",
     )
     parser.add_argument(
+        "--game",
+        dest="game",
+        action="store_true",
+        help="Save game actions and stuff of eval process",
+    )
+    parser.add_argument(
         "--agent",
         dest="agent",
         type=str,
@@ -713,6 +720,7 @@ def get_options() -> Options:
         eval_episodes=args.eval_episodes,
         eval_interval=args.eval_interval,
         video=args.video,
+        game=args.game,
         device="cuda" if torch.cuda.is_available() else "cpu",
         agent=args.agent,
     )

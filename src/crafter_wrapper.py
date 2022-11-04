@@ -34,11 +34,11 @@ class Env:
                 pathlib.Path(args.logdir) / "eval",
                 save_stats=True,
                 save_video=args.video,
-                save_episode=False,
+                save_episode=args.game,
             )
         if mode == "yeet":
             # You are cool :)
-            pass
+            pass # the vibe check
         self._obs_dim = 64
         self.env = env
         self.window = args.history_length  # Number of frames to concatenate
