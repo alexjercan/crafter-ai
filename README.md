@@ -73,7 +73,7 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] Success rate for each achievement
 - [x] Distribution of actions taken with respect to time (step)
 - [x] Compare the methods (reward, success rates)
-- [ ] Maybe try to create a plot like in the duel dqn paper?
+- [ ] Maybe try to create a plot like in the duel dqn paper? (saving the model, need to output the last layers and convert them to img)
 
 2. [ ] More algorithms
 - [x] DQN
@@ -82,6 +82,7 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] Maybe try to penalize noop
 - [ ] Explore intrinsic reward for exploring new states
 - [ ] Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
+- [x] Give extra reward for placing table and stuff for first time.
 
 3. [ ] More data
 - [ ] Find a dataset with prerecorded good gameplay
@@ -96,5 +97,4 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] 3 Runs with extended replay buffer (from human)
 - [x] 3 Runs with extended epsilon decay replay buffer (from human)
 - [x] 3 Runs with noop is bad environment and all modifiers YEET
-- [ ] 3 Runs with noop is bad but moving is ok?
 
