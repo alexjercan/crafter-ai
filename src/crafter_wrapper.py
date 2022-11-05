@@ -44,6 +44,24 @@ class Env:
         self.window = args.history_length  # Number of frames to concatenate
         self.state_buffer = deque([], maxlen=args.history_length)
 
+        # Modifiers
+        self.noop = "noop" in args.agent and mode == "train"
+        self.move = "move" in args.agent and mode == "train"
+        self.do = "do" in args.agent and mode == "train"
+        self.brain = "brain" in args.agent and mode == "train"
+        self.noop_idx = self.env.action_names.index("noop")
+        self.move_ids = [
+            self.env.action_names.index("move_left"),
+            self.env.action_names.index("move_right"),
+            self.env.action_names.index("move_up"),
+            self.env.action_names.index("move_down"),
+        ]
+        self.do_idx = self.env.action_names.index("do")
+        self.table_idx = self.env.action_names.index("place_table")
+        self.furnace_idx = self.env.action_names.index("place_furnace")
+        self.stone_idx = self.env.action_names.index("place_stone")
+        self.plant_idx = self.env.action_names.index("place_plant")
+
     @property
     def observation_space(self):
         return BoxSpace(0, 1, (self._obs_dim, self._obs_dim), np.float32)
@@ -68,38 +86,48 @@ class Env:
         obs = obs.mean(-1)
         obs = torch.tensor(obs, dtype=torch.float32, device=self.device).div_(255)
         self.state_buffer.append(obs)
-        return torch.stack(list(self.state_buffer), 0).unsqueeze(0), reward, done, info
 
-
-class NoopBadEnv(Env):
-    def __init__(self, mode, args):
-        super().__init__(mode, args)
-        self.noop_idx = self.env.action_names.index("noop")
-
-    def step(self, action):
-        state, reward, done, info = super().step(action)
-        if action == self.noop_idx:
+        if self.noop and action == self.noop_idx:
             reward = reward - 0.1
-
-        return state, reward, done, info
-
-
-class MoveOkEnv(Env):
-    def __init__(self, mode, args):
-        super().__init__(mode, args)
-        self.move_ids = [
-            self.env.action_names.index("move_left"),
-            self.env.action_names.index("move_right"),
-            self.env.action_names.index("move_up"),
-            self.env.action_names.index("move_down"),
-        ]
-
-    def step(self, action):
-        state, reward, done, info = super().step(action)
-        if action in self.move_ids:
+        if self.move and action in self.move_ids:
             reward = reward + 0.025
+        if self.do and action == self.do_idx:
+            reward = reward + 0.025
+        if self.brain and info is not None:
+            inventory = info["inventory"]
+            achievements = info["achievements"]
 
-        return state, reward, done, info
+            wood = inventory["wood"]
+            if (
+                wood >= 2
+                and achievements["place_table"] == 0
+                and action == self.table_idx
+            ):
+                reward += 2
+
+            stone = inventory["stone"]
+            if (
+                stone >= 4
+                and achievements["place_furnace"] == 0
+                and action == self.furnace_idx
+            ):
+                reward += 2
+            if (
+                stone >= 1
+                and achievements["place_stone"] == 0
+                and action == self.stone_idx
+            ):
+                reward += 1
+
+            sapling = inventory["sapling"]
+            if (
+                sapling >= 1
+                and achievements["place_plant"] == 0
+                and action == self.plant_idx
+            ):
+                reward += 2
+
+        return torch.stack(list(self.state_buffer), 0).unsqueeze(0), reward, done, info
 
 
 class ReplayEnv:
@@ -145,6 +173,7 @@ def human_to_buffer(
             self.history_length = history_length
             self.device = "cpu"
             self.video = False
+            self.agent = "scuff"
 
     args = Scuff(history_length)
 

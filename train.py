@@ -14,7 +14,7 @@ from copy import deepcopy
 from collections import deque
 from tqdm.auto import tqdm
 from pathlib import Path
-from src.crafter_wrapper import Env, NoopBadEnv, MoveOkEnv, human_to_buffer
+from src.crafter_wrapper import Env, human_to_buffer
 from torch import Tensor
 from typing import Iterator, Tuple, List, Optional
 
@@ -121,26 +121,28 @@ class DuelConvModel(nn.Module):
 
         self.blocks = nn.Sequential(*blocks)
         self.value = nn.Sequential(
-            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 128),
+            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 256),
             nn.ReLU(),
-            nn.Linear(128, 1),
         )
+        self.value_c = nn.Linear(256, 1)
         self.advantage = nn.Sequential(
-            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 128),
+            nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 256),
             nn.ReLU(),
-            nn.Linear(128, num_actions),
         )
+        self.advantage_c = nn.Linear(256, num_actions)
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.blocks(x)
         x = x.reshape(x.shape[0], -1)
 
         values = self.value(x)
+        values_ = self.value_c(values)
         advantages = self.advantage(x)
+        advantages_ = self.advantage_c(advantages)
 
-        advantages = advantages - advantages.mean(dim=1, keepdim=True)
+        advantages_ = advantages_ - advantages_.mean(dim=1, keepdim=True)
 
-        return values + advantages
+        return values_ + advantages_
 
 
 class ReplayMemory:
@@ -294,6 +296,9 @@ class Agent:
     ) -> None:
         pass
 
+    def save(self, path: str) -> None:
+        pass
+
 
 class RandomAgent(Agent):
     """An example Random Agent"""
@@ -311,17 +316,6 @@ class RandomAgent(Agent):
 
     def step(self, state: Tensor) -> int:
         return self.act(state)
-
-    def learn(
-        self,
-        state: Tensor,
-        action: int,
-        reward: float,
-        state_: Tensor,
-        done: bool,
-        opt: Options,
-    ) -> None:
-        pass
 
 
 class DQNAgent(Agent):
@@ -401,6 +395,9 @@ class DQNAgent(Agent):
             self._target_estimator.load_state_dict(self._estimator.state_dict())
 
         self._step_cnt += 1
+
+    def save(self, path: str) -> None:
+        torch.save(self._estimator.state_dict(), path)
 
     def _update(
         self,
@@ -603,19 +600,10 @@ def _get_agent(opt: Options, env: Env) -> Agent:
     raise NotImplementedError(opt.agent)
 
 
-def _get_env(mode: str, opt: Options) -> Env:
-    if "noop" in opt.agent:
-        return NoopBadEnv(mode, opt)
-    if "move" in opt.agent:
-        return MoveOkEnv(mode, opt)
-
-    return Env(mode, opt)
-
-
 def main(opt: Options) -> None:
     _info(opt)
 
-    env = _get_env("train", opt)
+    env = Env("train", opt)
     eval_env = Env("eval", opt)
 
     agent = _get_agent(opt, env)
@@ -646,8 +634,10 @@ def main(opt: Options) -> None:
         pbar.update(1)
         step_cnt += 1
 
+    agent.save(opt.logdir + "/agent.pkl")
 
-def get_options() -> Options:
+
+def get_options(train: bool = True) -> Options:
     """Configures a parser. Extend this with all the best performing hyperparameters of
     your agent as defaults.
 
@@ -711,9 +701,11 @@ def get_options() -> Options:
 
     logdir = os.path.join(args.logdir, f"{args.agent}_agent")
     os.makedirs(logdir, exist_ok=True)
-    run = str(len([f for f in os.scandir(logdir) if f.is_dir()]))
-    logdir = os.path.join(logdir, run)
-    os.makedirs(logdir, exist_ok=True)
+
+    if train:
+        run = str(len([f for f in os.scandir(logdir) if f.is_dir()]))
+        logdir = os.path.join(logdir, run)
+        os.makedirs(logdir, exist_ok=True)
 
     return Options(
         logdir=logdir,
