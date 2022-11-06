@@ -546,7 +546,7 @@ def _get_memory(opt: Options) -> ReplayMemory:
         return EpsilonExtendedMemory(
             size=1_000,
             batch_size=32,
-            epsilon=get_epsilon_schedule(start=0.5, end=0.1, steps=50_000),
+            epsilon=get_epsilon_schedule(start=0.5, end=0.1, steps=opt.steps // 2),
             opt=opt,
         )
     if "ext" in opt.agent:
