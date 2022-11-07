@@ -1,3 +1,7 @@
+"""Plots the values and advantages on the video of the game; This requires the saved model of the agent inside the run as agent.pkl
+
+This creates a video with the gameplay and the values as red on top
+"""
 import sys
 import os
 

@@ -1,3 +1,8 @@
+"""Plot game information for the runs of an agent. Only works for runs of agents that had the --game flag
+
+For now it plots:
+    - Actions distribution of the agent in one game
+"""
 import pathlib
 import argparse
 

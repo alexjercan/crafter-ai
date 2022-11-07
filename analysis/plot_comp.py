@@ -1,3 +1,9 @@
+"""This plots the stats for all the agents in the logdir
+
+For now this plots:
+    - The average return of each agent
+    - The success rate of each agent
+"""
 import pathlib
 import argparse
 

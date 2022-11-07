@@ -1,3 +1,11 @@
+"""Plots the stats of an agent using the runs
+
+For now it plots:
+    - The avg return
+    - The train loss
+    - The qsa values for train
+    - Success rate for the runs
+"""
 import pathlib
 import argparse
 
