@@ -1,8 +1,8 @@
-# Crafter Assignment starter code
+# Crafter AI
 
 This folder contains the following code:
 
-- `train.py` A basic training loop with a random agent you can use for your own agent. Feel free to modify it at will.
+- `train.py` A basic training loop with a different types of agents. Feel free to modify it at will.
 - `src/crafter_wrapper.py` A wrapper over the `Crafter` environment that provides basic logging and observation preprocessing.
 - `analysis/plot_stats.py` A simple script for plotting the stats of your agent.
 - `analysis/plot_comp.py` A simple script for ploting the stats of all the agents as a comparison.
@@ -75,6 +75,38 @@ python analysis/plot_comp.py --logdir logdir
 
 For other performance metrics see the [plotting scripts](https://github.com/danijar/crafter/tree/main/analysis) in the original Crafter repo.
 
+## Results
+
+Playing the game manually I have observed that the main difficulty comes from
+dying of starvation. The game becomes really difficult during the night when
+there are a lot of enemies. To be able to survive longer you need to create a
+zone that is separated from the outside world using stones, but this will make
+you run out of food. Something that I was not able to discover is how to use
+plants to get food.
+
+The random agent manages to at best place a table and score around 2 or 3
+achievements and it has an average return less than 2. The agent that manages to
+beat the random agent is the eext_duel_ddqn agent.
+
+![Agent Duel Net](./resources/AgentDuelNet.png "The architecture of the best agent.")
+
+The input to the model is the grayscale image of the game. It uses the duel
+architecture described in the duel dqn paper. The model outputs the q values
+associated with each action. The agent will choose the action with the maximum
+q value during evaluation.
+
+![Best Video of Crafter Agent](./resources/best.gif)
+
+The agent managed to craft a pickaxe before dying to a skeleton archer. F
+
+![Agents Average Reward](./resources/eval_average_return.png)
+
+The average return of all the agents that I tested for 100_000 steps.
+
+![Agents Success Rate](./resources/eval_success.png)
+
+The success rate of all agents that I have tested for 100_000 steps.
+
 ## TODO
 
 1. [x] More visualization
@@ -99,7 +131,7 @@ For other performance metrics see the [plotting scripts](https://github.com/dani
 - [x] Record some gameplay using `python3 -m crafter.run_gui --record logdir/human_agent/0/eval`
 - [x] Create a replay buffer that randomly samples from prerecorded dataset
 
-4. [ ] More test runs to generate better plots
+4. [x] More test runs to generate better plots
 - [x] 3 Runs with Random
 - [x] 3 Runs with DQN
 - [x] 3 Runs with DDQN
