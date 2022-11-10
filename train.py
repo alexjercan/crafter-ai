@@ -694,7 +694,7 @@ def get_options(train: bool = True) -> Options:
         "--agent",
         dest="agent",
         type=str,
-        default="random",
+        default="eext_duel_ddqn",
         help="The agent to use: random, dqn, ddqn with eex/ext and duel modifiers",
     )
     args = parser.parse_args()
