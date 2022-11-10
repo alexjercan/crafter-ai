@@ -109,7 +109,7 @@ The success rate of all agents that I have tested for 100_000 steps.
 
 ## TODO
 
-1. [x] More visualization
+1. More visualization
 - [x] Episodic Reward for eval
 - [x] Loss plot for training
 - [x] Success rate for each achievement
@@ -117,7 +117,7 @@ The success rate of all agents that I have tested for 100_000 steps.
 - [x] Compare the methods (reward, success rates)
 - [x] Maybe try to create a plot like in the duel dqn paper? (saving the model, need to output the last layers and convert them to img)
 
-2. [ ] More algorithms
+2. More algorithms
 - [x] DQN
 - [x] DDQN
 - [x] Dueling DQN
@@ -126,12 +126,12 @@ The success rate of all agents that I have tested for 100_000 steps.
 - [x] Give extra reward for placing table and stuff for first time.
 - [ ] Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
 
-3. [ ] More data
+3. More data
 - [ ] Find a dataset with prerecorded good gameplay
 - [x] Record some gameplay using `python3 -m crafter.run_gui --record logdir/human_agent/0/eval`
 - [x] Create a replay buffer that randomly samples from prerecorded dataset
 
-4. [x] More test runs to generate better plots
+4. More test runs to generate better plots
 - [x] 3 Runs with Random
 - [x] 3 Runs with DQN
 - [x] 3 Runs with DDQN
