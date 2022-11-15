@@ -236,7 +236,7 @@ class EpsilonExtendedMemory(ReplayMemory):
     ):
         super().__init__(opt, size, batch_size)
         self._human = human_to_buffer(replaydir, opt.history_length)
-        self._epsilon = epsilon or get_epsilon_schedule(start=0.5, end=0.1, steps=4000)
+        self._epsilon = epsilon or get_epsilon_schedule(start=0.9, end=0.1, steps=opt.steps*0.5)
 
     def sample(self) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         if next(self._epsilon) < torch.rand(1).item():
@@ -327,9 +327,9 @@ class DQNAgent(Agent):
         optimizer: optim.Optimizer,
         epsilon_schedule: Iterator[float],
         action_num: int,
-        gamma: float = 0.92,
-        update_steps: int = 4,
-        update_target_steps: int = 10,
+        gamma: float = 0.99,
+        update_steps: int = 2,
+        update_target_steps: int = 2000,
         warmup_steps: int = 100,
     ):
         super().__init__()
@@ -579,10 +579,9 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
-            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
-            env.action_space.n,
-            warmup_steps=100,
-            update_steps=2,
+            get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps*0.5),
+            action_num=env.action_space.n,
+            warmup_steps=opt.steps*0.1,
         )
 
     if "dqn" in opt.agent:
@@ -591,10 +590,9 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
-            get_epsilon_schedule(start=1.0, end=0.1, steps=4000),
-            env.action_space.n,
-            warmup_steps=100,
-            update_steps=2,
+            get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps*0.5),
+            action_num=env.action_space.n,
+            warmup_steps=opt.steps*0.1,
         )
 
     raise NotImplementedError(opt.agent)
