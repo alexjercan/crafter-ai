@@ -1,4 +1,5 @@
 import gym
+import random
 import pathlib
 from collections import deque
 
@@ -7,8 +8,36 @@ import numpy as np
 import torch
 from PIL import Image
 from typing import List, Tuple
+from crafter import constants
+from crafter.objects import Player
 
 BoxSpace = gym.spaces.Box
+
+
+def player_can_place(player: Player, name: str):
+    target = (player.pos[0] + player.facing[0], player.pos[1] + player.facing[1])
+    material, _ = player.world[target]
+
+    if player.world[target][1]:
+        return False
+    info = constants.place[name]
+    if material not in info["where"]:
+        return False
+    if any(player.inventory[k] < v for k, v in info["uses"].items()):
+        return False
+
+    return True
+
+
+def player_can_make(player: Player, name: str):
+    nearby, _ = player.world.nearby(player.pos, 1)
+    info = constants.make[name]
+    if not all(util in nearby for util in info["nearby"]):
+        return False
+    if any(player.inventory[k] < v for k, v in info["uses"].items()):
+        return False
+
+    return True
 
 
 class Env:
@@ -69,6 +98,32 @@ class Env:
     @property
     def action_space(self):
         return self.env.action_space
+
+    def choose_action(self) -> int:
+        actions = [0, 1, 2, 3, 4, 5, 6]
+
+        if player_can_place(self.env._player, "stone"):
+            actions.append(7)
+        if player_can_place(self.env._player, "table"):
+            actions.append(8)
+        if player_can_place(self.env._player, "furnace"):
+            actions.append(9)
+        if player_can_place(self.env._player, "plant"):
+            actions.append(10)
+        if player_can_make(self.env._player, "wood_pickaxe"):
+            actions.append(11)
+        if player_can_make(self.env._player, "stone_pickaxe"):
+            actions.append(12)
+        if player_can_make(self.env._player, "iron_pickaxe"):
+            actions.append(13)
+        if player_can_make(self.env._player, "wood_sword"):
+            actions.append(14)
+        if player_can_make(self.env._player, "stone_sword"):
+            actions.append(15)
+        if player_can_make(self.env._player, "iron_sword"):
+            actions.append(16)
+
+        return random.choice(actions)
 
     def reset(self):
         for _ in range(self.window):

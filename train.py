@@ -367,8 +367,7 @@ class DQNAgent(Agent):
         if next(self._epsilon) < torch.rand(1).item():
             return self.act(state)
 
-        # TODO: do only actions that make sense
-        return int(torch.randint(self._action_num, (1,)).item())
+        return env.choose_action()
 
     def learn(
         self,
