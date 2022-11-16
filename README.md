@@ -124,7 +124,9 @@ The success rate of all agents that I have tested for 100_000 steps.
 - [x] Maybe try to penalize noop
 - [x] Explore intrinsic reward for exploring new states
 - [x] Give extra reward for placing table and stuff for first time.
-- [ ] Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
+- [x] Stole an idea from some colleagues and made the random actions be actions that actually do something
+- [ ] Test with penalize action that is not in the list of actions that do something (i.e the agent chooses craft iron pick but you have no iron)
+- [ ] (idk) Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
 
 3. More data
 - [ ] Find a dataset with prerecorded good gameplay
