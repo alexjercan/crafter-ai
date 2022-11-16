@@ -100,30 +100,31 @@ class Env:
         return self.env.action_space
 
     def choose_action(self) -> int:
-        actions = [0, 1, 2, 3, 4, 5, 6]
+        actions = [(0, 1), (1, 5), (2, 5), (3, 5), (4, 5), (5, 10), (6, 1)]
 
         if player_can_place(self.env._player, "stone"):
-            actions.append(7)
+            actions.append((7, 5))
         if player_can_place(self.env._player, "table"):
-            actions.append(8)
+            actions.append((8, 10))
         if player_can_place(self.env._player, "furnace"):
-            actions.append(9)
+            actions.append((9, 10))
         if player_can_place(self.env._player, "plant"):
-            actions.append(10)
+            actions.append((10, 5))
         if player_can_make(self.env._player, "wood_pickaxe"):
-            actions.append(11)
+            actions.append((11, 100))
         if player_can_make(self.env._player, "stone_pickaxe"):
-            actions.append(12)
+            actions.append((12, 100))
         if player_can_make(self.env._player, "iron_pickaxe"):
-            actions.append(13)
+            actions.append((13, 100))
         if player_can_make(self.env._player, "wood_sword"):
-            actions.append(14)
+            actions.append((14, 100))
         if player_can_make(self.env._player, "stone_sword"):
-            actions.append(15)
+            actions.append((15, 100))
         if player_can_make(self.env._player, "iron_sword"):
-            actions.append(16)
+            actions.append((16, 100))
 
-        return random.choice(actions)
+        actions = np.array(actions)
+        return np.random.choice(actions[:, 0], p=actions[:, 1]/actions[:, 1].sum())
 
     def reset(self):
         for _ in range(self.window):
