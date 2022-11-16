@@ -321,25 +321,26 @@ class RandomAgent(Agent):
 class DQNAgent(Agent):
     def __init__(
         self,
+        env: Env,
         estimator: nn.Module,
         buffer: ReplayMemory,
         criterion: nn.Module,
         optimizer: optim.Optimizer,
         epsilon_schedule: Iterator[float],
-        action_num: int,
         gamma: float = 0.99,
         update_steps: int = 2,
         update_target_steps: int = 2000,
         warmup_steps: int = 100,
     ):
         super().__init__()
+        self._env = env
         self._estimator = estimator
         self._target_estimator = deepcopy(estimator)
         self._buffer = buffer
         self._criterion = criterion
         self._optimizer = optimizer
         self._epsilon = epsilon_schedule
-        self._action_num = action_num
+        self._action_num = env.action_space.n
         self._gamma = gamma
         self._update_steps = update_steps
         self._update_target_steps = update_target_steps
@@ -366,6 +367,7 @@ class DQNAgent(Agent):
         if next(self._epsilon) < torch.rand(1).item():
             return self.act(state)
 
+        # TODO: do only actions that make sense
         return int(torch.randint(self._action_num, (1,)).item())
 
     def learn(
@@ -544,15 +546,15 @@ def _info(opt: Options) -> None:
 def _get_memory(opt: Options) -> ReplayMemory:
     if "eext" in opt.agent:
         return EpsilonExtendedMemory(
-            size=1_000,
+            size=5_000,
             batch_size=32,
-            epsilon=get_epsilon_schedule(start=0.5, end=0.1, steps=opt.steps // 2),
+            epsilon=get_epsilon_schedule(start=0.75, end=0.1, steps=opt.steps // 2),
             opt=opt,
         )
     if "ext" in opt.agent:
-        return ExtendedMemory(size=1_000, batch_size=32, epsilon=0.5, opt=opt)
+        return ExtendedMemory(size=5_000, batch_size=32, epsilon=0.5, opt=opt)
 
-    return ReplayMemory(size=1_000, batch_size=32, opt=opt)
+    return ReplayMemory(size=5_000, batch_size=32, opt=opt)
 
 
 def _get_net(opt: Options, env: Env) -> nn.Module:
@@ -575,24 +577,28 @@ def _get_agent(opt: Options, env: Env) -> Agent:
 
     if "ddqn" in opt.agent:
         return DDQNAgent(
+            env,
             net,
             buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
             get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps*0.5),
-            action_num=env.action_space.n,
-            warmup_steps=opt.steps*0.1,
+            warmup_steps=opt.steps*0.025,
+            update_steps=4,
+            update_target_steps=2_000,
         )
 
     if "dqn" in opt.agent:
         return DQNAgent(
+            env,
             net,
             buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
             get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps*0.5),
-            action_num=env.action_space.n,
-            warmup_steps=opt.steps*0.1,
+            warmup_steps=opt.steps*0.025,
+            update_steps=4,
+            update_target_steps=2_000,
         )
 
     raise NotImplementedError(opt.agent)
