@@ -78,6 +78,7 @@ class Env:
         self.move = "move" in args.agent and mode == "train"
         self.do = "do" in args.agent and mode == "train"
         self.brain = "brain" in args.agent and mode == "train"
+        self.valid= "valid" in args.agent and mode == "train"
         self.noop_idx = self.env.action_names.index("noop")
         self.move_ids = [
             self.env.action_names.index("move_left"),
@@ -126,6 +127,32 @@ class Env:
         actions = np.array(actions)
         return np.random.choice(actions[:, 0], p=actions[:, 1]/actions[:, 1].sum())
 
+    def is_action_valid(self, action: int) -> bool:
+        actions = [0, 1, 2, 3, 4, 5, 6]
+
+        if player_can_place(self.env._player, "stone"):
+            actions.append(7)
+        if player_can_place(self.env._player, "table"):
+            actions.append(8)
+        if player_can_place(self.env._player, "furnace"):
+            actions.append(9)
+        if player_can_place(self.env._player, "plant"):
+            actions.append(10)
+        if player_can_make(self.env._player, "wood_pickaxe"):
+            actions.append(11)
+        if player_can_make(self.env._player, "stone_pickaxe"):
+            actions.append(12)
+        if player_can_make(self.env._player, "iron_pickaxe"):
+            actions.append(13)
+        if player_can_make(self.env._player, "wood_sword"):
+            actions.append(14)
+        if player_can_make(self.env._player, "stone_sword"):
+            actions.append(15)
+        if player_can_make(self.env._player, "iron_sword"):
+            actions.append(16)
+
+        return action in actions
+
     def reset(self):
         for _ in range(self.window):
             self.state_buffer.append(
@@ -143,6 +170,8 @@ class Env:
         obs = torch.tensor(obs, dtype=torch.float32, device=self.device).div_(255)
         self.state_buffer.append(obs)
 
+        if self.valid and not self.is_action_valid(action):
+            reward = reward - 0.1
         if self.noop and action == self.noop_idx:
             reward = reward - 0.1
         if self.move and action in self.move_ids:

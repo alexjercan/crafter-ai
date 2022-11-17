@@ -52,6 +52,8 @@ You can also run other types of agents:
                         For example if player has 2 wood and places a table it gains 2 reward
                         if the player has 4 stone and places a furnace it gains 2 reward for placing a stone it gains 1 reward
                         for placing a plant in gains 2 reward. these rewards are awarded only for the first time
+- valid (modifier)      Check if the action taken by the agent is valid, if not substract 0.1 from reward that lil B
+                        has to learn the hard way that crafting iron picks is not the way to go in wood age
 
 Modifier means that it can be used as a decorator: `ext_duel_ddqn`
 
@@ -127,6 +129,7 @@ The success rate of all agents that I have tested for 100_000 steps.
 - [x] Stole an idea from some colleagues and made the random actions be actions that actually do something
 - [ ] Test with penalize action that is not in the list of actions that do something (i.e the agent chooses craft iron pick but you have no iron)
 - [ ] (idk) Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
+- [ ] Test dropout in dnn
 
 3. More data
 - [ ] Find a dataset with prerecorded good gameplay
