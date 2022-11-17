@@ -26,7 +26,7 @@ from typing import Tuple
 
 class EvalAgent(Agent):
     def __init__(self, estimator: nn.Module) -> None:
-        self._estimator = estimator
+        self._estimator = estimator.eval()
 
     @torch.no_grad()
     def act(self, state: Tensor) -> int:
@@ -47,7 +47,6 @@ if __name__ == "__main__":
 
     for filename in filenames:
         net.load_state_dict(torch.load(filename))
-        net.eval()
 
         eval(agent, env, 1_000_000, opt)
 

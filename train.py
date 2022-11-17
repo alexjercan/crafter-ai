@@ -78,7 +78,11 @@ class ConvBlock(nn.Module):
 
 class ConvModel(nn.Module):
     def __init__(
-        self, in_features: int, num_actions: int, image_size: Tuple[int, int] = (64, 64)
+        self,
+        in_features: int,
+        num_actions: int,
+        image_size: Tuple[int, int] = (64, 64),
+        dropout: float = 0.0,
     ):
         super().__init__()
         self.in_features = in_features
@@ -95,6 +99,7 @@ class ConvModel(nn.Module):
         self.classifier = nn.Sequential(
             nn.Linear(16 * (image_size[0] // 4) * (image_size[1] // 4), 128),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(128, num_actions),
         )
 
@@ -106,7 +111,11 @@ class ConvModel(nn.Module):
 
 class DuelConvModel(nn.Module):
     def __init__(
-        self, in_features: int, num_actions: int, image_size: Tuple[int, int] = (64, 64)
+        self,
+        in_features: int,
+        num_actions: int,
+        image_size: Tuple[int, int] = (64, 64),
+        dropout: float = 0.0,
     ):
         super().__init__()
         self.in_features = in_features
@@ -131,13 +140,17 @@ class DuelConvModel(nn.Module):
         )
         self.advantage_c = nn.Linear(256, num_actions)
 
+        self.dropout = nn.Dropout(dropout)
+
     def forward(self, x: Tensor) -> Tensor:
         x = self.blocks(x)
         x = x.reshape(x.shape[0], -1)
 
         values = self.value(x)
+        values = self.dropout(values)
         values_ = self.value_c(values)
         advantages = self.advantage(x)
+        advantages = self.dropout(advantages)
         advantages_ = self.advantage_c(advantages)
 
         advantages_ = advantages_ - advantages_.mean(dim=1, keepdim=True)
@@ -236,7 +249,9 @@ class EpsilonExtendedMemory(ReplayMemory):
     ):
         super().__init__(opt, size, batch_size)
         self._human = human_to_buffer(replaydir, opt.history_length)
-        self._epsilon = epsilon or get_epsilon_schedule(start=0.9, end=0.1, steps=opt.steps*0.5)
+        self._epsilon = epsilon or get_epsilon_schedule(
+            start=0.9, end=0.1, steps=opt.steps * 0.5
+        )
 
     def sample(self) -> Tuple[Tensor, Tensor, Tensor, Tensor, Tensor]:
         if next(self._epsilon) < torch.rand(1).item():
@@ -299,6 +314,12 @@ class Agent:
     def save(self, path: str) -> None:
         pass
 
+    def train(self) -> None:
+        pass
+
+    def eval(self) -> None:
+        pass
+
 
 class RandomAgent(Agent):
     """An example Random Agent"""
@@ -335,7 +356,7 @@ class DQNAgent(Agent):
         super().__init__()
         self._env = env
         self._estimator = estimator
-        self._target_estimator = deepcopy(estimator)
+        self._target_estimator = deepcopy(estimator).eval()
         self._buffer = buffer
         self._criterion = criterion
         self._optimizer = optimizer
@@ -399,6 +420,12 @@ class DQNAgent(Agent):
 
     def save(self, path: str) -> None:
         torch.save(self._estimator.state_dict(), path)
+
+    def train(self) -> None:
+        self._estimator.train()
+
+    def eval(self) -> None:
+        self._estimator.eval()
 
     def _update(
         self,
@@ -581,8 +608,8 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
-            get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps*0.5),
-            warmup_steps=opt.steps*0.025,
+            get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps * 0.5),
+            warmup_steps=opt.steps * 0.025,
             update_steps=4,
             update_target_steps=2_000,
         )
@@ -594,8 +621,8 @@ def _get_agent(opt: Options, env: Env) -> Agent:
             buffer,
             nn.HuberLoss(),
             optim.Adam(net.parameters(), lr=3e-4, eps=1e-5),
-            get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps*0.5),
-            warmup_steps=opt.steps*0.025,
+            get_epsilon_schedule(start=1.0, end=0.1, steps=opt.steps * 0.5),
+            warmup_steps=opt.steps * 0.025,
             update_steps=4,
             update_target_steps=2_000,
         )
@@ -610,6 +637,7 @@ def main(opt: Options) -> None:
     eval_env = Env("eval", opt)
 
     agent = _get_agent(opt, env)
+    agent.train()
 
     # main loop
     ep_cnt, step_cnt, done = 0, 0, True
@@ -626,7 +654,9 @@ def main(opt: Options) -> None:
 
         # evaluate once in a while
         if step_cnt % opt.eval_interval == 0:
+            agent.eval()
             eval(agent, eval_env, step_cnt, opt)
+            agent.train()
 
         episode_reward += r
         s = s_next.clone()
@@ -699,6 +729,13 @@ def get_options(train: bool = True) -> Options:
         type=str,
         default="eext_duel_ddqn",
         help="The agent to use: random, dqn, ddqn with eex/ext and duel modifiers",
+    )
+    parser.add_argument(
+        "--dropout",
+        dest="dropout",
+        type=float,
+        default=0.0,
+        help="The dropout value to use in the NN",
     )
     args = parser.parse_args()
 
