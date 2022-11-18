@@ -1,4 +1,5 @@
 import os
+import re
 import pickle
 import pathlib
 
@@ -27,6 +28,7 @@ def read_crafter_logs(
     will be identified by the run column.
     """
     filenames = sorted(list(pathlib.Path(logdir).glob(f"**/*/{mode}_stats.pkl")))
+    filenames = filter(lambda f: re.match(rf"^.*/[0-9]+/.*.pkl", str(f)), filenames)
     runs = []
     for idx, fn in enumerate(filenames):
         df = pd.DataFrame(data=read_pkl(str(fn)))
@@ -53,6 +55,7 @@ def read_crafter_record(
     will be identified by the run column.
     """
     filenames = sorted(list(pathlib.Path(logdir).glob(f"**/*/{mode}/stats.jsonl")))
+    filenames = filter(lambda f: re.match(rf"^.*/[0-9]+/.*.jsonl", str(f)), filenames)
     runs = []
     for idx, fn in enumerate(filenames):
         df = pd.read_json(fn, lines=True)
