@@ -127,12 +127,12 @@ The success rate of all agents that I have tested for 100_000 steps.
 - [x] Explore intrinsic reward for exploring new states
 - [x] Give extra reward for placing table and stuff for first time.
 - [x] Stole an idea from some colleagues and made the random actions be actions that actually do something
-- [ ] Test with penalize action that is not in the list of actions that do something (i.e the agent chooses craft iron pick but you have no iron)
+- [x] Test with penalize action that is not in the list of actions that do something (i.e the agent chooses craft iron pick but you have no iron)
+- [x] Test dropout in dnn
 - [ ] (idk) Test with penalize same action multiple times in a row (or have like a diminishing return for actions) if the agent just spams space then he is bad and is a skill issue.
-- [ ] Test dropout in dnn
 
 3. More data
-- [ ] Find a dataset with prerecorded good gameplay
+- [x] Find a dataset with prerecorded good gameplay
 - [x] Record some gameplay using `python3 -m crafter.run_gui --record logdir/human_agent/0/eval`
 - [x] Create a replay buffer that randomly samples from prerecorded dataset
 
